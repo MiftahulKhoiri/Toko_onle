@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Login — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h1>Login</h1>
+    <form id="login-form">
+        <label>Email</label>
+        <input type="email" id="email" required>
+        <label>Password</label>
+        <input type="password" id="password" required>
+        <button type="submit">Login</button>
+    </form>
+    <p id="error-msg" class="error"></p>
+    <p>Belum punya akun? <a href="/register">Daftar</a></p>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("error-msg");
+    errorMsg.textContent = "";
+
+    try {
+        const res = await fetch("/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`,
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            errorMsg.textContent = err.detail || "Login gagal";
+            return;
+        }
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        window.location.href = "/";
+    } catch (err) {
+        errorMsg.textContent = "Tidak bisa terhubung ke server";
+    }
+});
+</script>
+{% endblock %}
