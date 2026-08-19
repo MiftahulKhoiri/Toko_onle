@@ -6,16 +6,22 @@
 <div class="produk-grid">
     {% for produk in produk_list %}
     <div class="produk-card">
-        {% if produk.gambar_url %}
-        <img src="{{ produk.gambar_url }}" alt="{{ produk.nama }}">
-        {% endif %}
-        <h3>{{ produk.nama }}</h3>
-        <p class="deskripsi">{{ produk.deskripsi or '' }}</p>
-        <p class="harga">Rp{{ "{:,.0f}".format(produk.harga).replace(",", ".") }}</p>
-        <p class="stok">Stok: {{ produk.stok }}</p>
-        <button onclick="tambahKeKeranjang({{ produk.id }})" {% if produk.stok == 0 %}disabled{% endif %}>
-            {% if produk.stok == 0 %}Habis{% else %}+ Keranjang{% endif %}
-        </button>
+        <div class="produk-media">
+            {% if produk.gambar_url %}
+            <img src="{{ produk.gambar_url }}" alt="{{ produk.nama }}">
+            {% else %}
+            <div class="produk-placeholder">🥣</div>
+            {% endif %}
+            <span class="harga-stamp">Rp{{ "{:,.0f}".format(produk.harga).replace(",", ".") }}</span>
+        </div>
+        <div class="produk-info">
+            <h3>{{ produk.nama }}</h3>
+            <p class="deskripsi">{{ produk.deskripsi or '' }}</p>
+            <p class="stok">Stok: {{ produk.stok }}</p>
+            <button onclick="tambahKeKeranjang({{ produk.id }})" {% if produk.stok == 0 %}disabled{% endif %}>
+                {% if produk.stok == 0 %}Habis{% else %}+ Keranjang{% endif %}
+            </button>
+        </div>
     </div>
     {% else %}
     <p>Belum ada produk.</p>
