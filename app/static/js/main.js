@@ -1,11 +1,36 @@
 // app/static/js/main.js
-function updateNavAuthState() {
+async function updateNavAuthState() {
     const token = localStorage.getItem("access_token");
     const navAuth = document.getElementById("nav-auth");
     if (!navAuth) return;
-    navAuth.innerHTML = token
-        ? '<a href="#" onclick="logout()">Logout</a>'
-        : '<a href="/login">Login</a>';
+
+    if (!token) {
+        navAuth.innerHTML = '<a href="/login">Login</a>';
+        return;
+    }
+
+    try {
+        const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) {
+            localStorage.removeItem("access_token");
+            navAuth.innerHTML = '<a href="/login">Login</a>';
+            return;
+        }
+        const user = await res.json();
+
+        let html = `<span class="nav-user">Halo, ${user.nama}`;
+        if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
+        html += "</span>";
+
+        if (user.is_admin) {
+            html += ' <a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a>';
+        }
+        html += ' <a href="#" onclick="logout()">Logout</a>';
+
+        navAuth.innerHTML = html;
+    } catch (err) {
+        navAuth.innerHTML = '<a href="/login">Login</a>';
+    }
 }
 
 function logout() {
