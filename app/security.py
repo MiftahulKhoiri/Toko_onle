@@ -13,7 +13,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "ganti-ini-di-file-.env-jangan-dipakai-di-p
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # token berlaku 1 hari
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
