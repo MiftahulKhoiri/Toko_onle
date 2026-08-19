@@ -41,15 +41,15 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str  # plain text masuk sini, di-hash sebelum simpan ke DB
+    password: str
 
 
 class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    is_admin: bool = False
     created_at: datetime
-    # sengaja TIDAK ada hashed_password di sini
 
 
 # ---------- Auth ----------
@@ -84,6 +84,10 @@ class OrderCreate(BaseModel):
     payment_method: Optional[str] = None
 
 
+class OrderStatusUpdate(BaseModel):
+    status: str  # menunggu_pembayaran, dibayar, diproses, selesai, batal
+
+
 class OrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -94,3 +98,4 @@ class OrderResponse(BaseModel):
     payment_method: Optional[str] = None
     created_at: datetime
     items: List[OrderItemResponse] = []
+    user: Optional[UserResponse] = None
