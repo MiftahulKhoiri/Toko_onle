@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 
 from app import models
 from app.database import engine
-from app.routers import produk, auth, keranjang
+from app.routers import produk, auth, keranjang, payment
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -17,6 +17,7 @@ templates = Jinja2Templates(directory="app/templates")
 app.include_router(produk.router)
 app.include_router(auth.router)
 app.include_router(keranjang.router)
+app.include_router(payment.router)
 
 
 @app.get("/")
