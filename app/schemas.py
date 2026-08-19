@@ -52,6 +52,16 @@ class UserResponse(UserBase):
     # sengaja TIDAK ada hashed_password di sini
 
 
+# ---------- Auth ----------
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
+
 # ---------- OrderItem ----------
 class OrderItemCreate(BaseModel):
     produk_id: int
