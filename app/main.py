@@ -1,8 +1,12 @@
 # app/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi import Request
+
+from app import models
+from app.database import engine
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Toko Salome Cakyud")
 
