@@ -14,21 +14,22 @@ templates = Jinja2Templates(directory="app/templates")
 def home(request: Request, db: Session = Depends(get_db)):
     produk_list = db.query(models.Produk).all()
     return templates.TemplateResponse(
+        request,
         "index.html",
-        {"request": request, "nama_toko": "Salome Cakyud", "produk_list": produk_list},
+        {"nama_toko": "Salome Cakyud", "produk_list": produk_list},
     )
 
 
 @router.get("/login")
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "nama_toko": "Salome Cakyud"})
+    return templates.TemplateResponse(request, "login.html", {"nama_toko": "Salome Cakyud"})
 
 
 @router.get("/register")
 def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request, "nama_toko": "Salome Cakyud"})
+    return templates.TemplateResponse(request, "register.html", {"nama_toko": "Salome Cakyud"})
 
 
 @router.get("/keranjang-saya")
 def keranjang_page(request: Request):
-    return templates.TemplateResponse("keranjang.html", {"request": request, "nama_toko": "Salome Cakyud"})
+    return templates.TemplateResponse(request, "keranjang.html", {"nama_toko": "Salome Cakyud"})
