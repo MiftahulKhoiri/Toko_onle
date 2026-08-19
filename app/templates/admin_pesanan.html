@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Kelola Pesanan — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<h1>Panel Admin — Pesanan</h1>
+<div id="admin-check"></div>
+<div id="pesanan-list" style="display: none;">Memuat...</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const token = localStorage.getItem("access_token");
+const STATUS_OPSI = ["menunggu_pembayaran", "dibayar", "diproses", "selesai", "batal"];
+
+async function cekAdmin() {
+    const checkDiv = document.getElementById("admin-check");
+    if (!token) {
+        checkDiv.innerHTML = '<p>Silakan <a href="/login">login</a> dulu.</p>';
+        return false;
+    }
+    const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        checkDiv.innerHTML = '<p>Sesi habis, silakan <a href="/login">login</a> lagi.</p>';
+        return false;
+    }
+    const user = await res.json();
+    if (!user.is_admin) {
+        checkDiv.innerHTML = "<p>Akses ditolak — halaman ini khusus admin.</p>";
+        return false;
+    }
+    document.getElementById("pesanan-list").style.display = "block";
+    return true;
+}
+
+async function muatPesanan() {
+    const container = document.getElementById("pesanan-list");
+    const res = await fetch("/admin/pesanan", { headers: { Authorization: `Bearer ${token}` } });
+    const pesananList = await res.json();
+
+    if (!pesananList.length) {
+        container.innerHTML = "<p>Belum ada pesanan masuk.</p>";
+        return;
+    }
+
+    let html = '<table class="keranjang-table"><tr><th>ID</th><th>Pembeli</th><th>Total</th><th>Status</th><th>Tanggal</th></tr>';
+    for (const o of pesananList) {
+        const opsiHtml = STATUS_OPSI.map(
+            (s) => `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`
+        ).join("");
+        html += `<tr>
+            <td>#${o.id}</td>
+            <td>${o.user ? o.user.nama : "-"}</td>
+            <td>Rp${o.total_harga.toLocaleString("id-ID")}</td>
+            <td><select data-order-id="${o.id}" class="status-select">${opsiHtml}</select></td>
+            <td>${new Date(o.created_at).toLocaleString("id-ID")}</td>
+        </tr>`;
+    }
+    html += "</table>";
+    container.innerHTML = html;
+
+    document.querySelectorAll(".status-select").forEach((sel) => {
+        sel.addEventListener("change", () => updateStatus(sel.dataset.orderId, sel.value));
+    });
+}
+
+async function updateStatus(orderId, statusBaru) {
+    await fetch(`/admin/pesanan/${orderId}/status`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status: statusBaru }),
+    });
+}
+
+(async () => {
+    if (await cekAdmin()) muatPesanan();
+})();
+</script>
+{% endblock %}
