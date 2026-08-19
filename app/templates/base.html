@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ nama_toko }}{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header class="navbar">
+        <a href="/" class="brand">🍢 {{ nama_toko }}</a>
+        <nav>
+            <a href="/">Produk</a>
+            <a href="/keranjang-saya">Keranjang</a>
+            <span id="nav-auth"></span>
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; {{ nama_toko }} — Bakso & aneka makanan lainnya.</p>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+    {% block script %}{% endblock %}
+</body>
+</html>
