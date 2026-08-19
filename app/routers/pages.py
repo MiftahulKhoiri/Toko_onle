@@ -14,9 +14,7 @@ templates = Jinja2Templates(directory="app/templates")
 def home(request: Request, db: Session = Depends(get_db)):
     produk_list = db.query(models.Produk).all()
     return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"nama_toko": "Salome Cakyud", "produk_list": produk_list},
+        request, "index.html", {"nama_toko": "Salome Cakyud", "produk_list": produk_list}
     )
 
 
@@ -33,3 +31,13 @@ def register_page(request: Request):
 @router.get("/keranjang-saya")
 def keranjang_page(request: Request):
     return templates.TemplateResponse(request, "keranjang.html", {"nama_toko": "Salome Cakyud"})
+
+
+@router.get("/panel-admin")
+def admin_dashboard_page(request: Request):
+    return templates.TemplateResponse(request, "admin_dashboard.html", {"nama_toko": "Salome Cakyud"})
+
+
+@router.get("/panel-admin/pesanan")
+def admin_pesanan_page(request: Request):
+    return templates.TemplateResponse(request, "admin_pesanan.html", {"nama_toko": "Salome Cakyud"})
