@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Daftar — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<div class="form-box">
+    <h1>Daftar Akun</h1>
+    <form id="register-form">
+        <label>Nama</label>
+        <input type="text" id="nama" required>
+        <label>Email</label>
+        <input type="email" id="email" required>
+        <label>Password</label>
+        <input type="password" id="password" required minlength="6">
+        <button type="submit">Daftar</button>
+    </form>
+    <p id="error-msg" class="error"></p>
+    <p>Sudah punya akun? <a href="/login">Login</a></p>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nama = document.getElementById("nama").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+    const errorMsg = document.getElementById("error-msg");
+    errorMsg.textContent = "";
+
+    try {
+        const res = await fetch("/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nama, email, password }),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            errorMsg.textContent = err.detail || "Pendaftaran gagal";
+            return;
+        }
+        window.location.href = "/login";
+    } catch (err) {
+        errorMsg.textContent = "Tidak bisa terhubung ke server";
+    }
+});
+</script>
+{% endblock %}
