@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import models
 from app.database import engine
-from app.routers import produk, auth, keranjang, payment, pages
+from app.routers import produk, auth, keranjang, payment, pages, admin
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -17,3 +17,4 @@ app.include_router(produk.router)
 app.include_router(auth.router)
 app.include_router(keranjang.router)
 app.include_router(payment.router)
+app.include_router(admin.router)
