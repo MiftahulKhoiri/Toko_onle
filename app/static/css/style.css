@@ -1,0 +1,46 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #fdf6ee;
+    color: #2b2118;
+    line-height: 1.5;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #b5442e;
+    padding: 1rem 1.5rem;
+    color: #fff;
+}
+.navbar .brand { color: #fff; font-weight: bold; font-size: 1.2rem; text-decoration: none; }
+.navbar nav a { color: #fff; text-decoration: none; margin-left: 1.2rem; }
+
+.container { max-width: 960px; margin: 0 auto; padding: 2rem 1rem; }
+
+.produk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1.5rem;
+}
+.produk-card { background: #fff; border-radius: 10px; padding: 1rem; box-shadow: 0 2px 6px rgba(0,0,0,0.08); text-align: center; }
+.produk-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+.produk-card .harga { font-weight: bold; color: #b5442e; margin: 0.4rem 0; }
+.produk-card button { width: 100%; padding: 0.5rem; background: #b5442e; color: #fff; border: none; border-radius: 6px; cursor: pointer; margin-top: 0.5rem; }
+.produk-card button:disabled { background: #ccc; cursor: not-allowed; }
+
+.form-box { max-width: 360px; margin: 2rem auto; background: #fff; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+.form-box label { display: block; margin-top: 1rem; font-size: 0.9rem; }
+.form-box input { width: 100%; padding: 0.5rem; margin-top: 0.3rem; border: 1px solid #ddd; border-radius: 6px; }
+.form-box button { width: 100%; margin-top: 1.5rem; padding: 0.6rem; background: #b5442e; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+.error { color: #c0392b; margin-top: 0.8rem; }
+
+.keranjang-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; }
+.keranjang-table th, .keranjang-table td { padding: 0.7rem; text-align: left; border-bottom: 1px solid #eee; }
+.keranjang-table input[type="number"] { width: 60px; padding: 0.3rem; }
+.total { font-size: 1.2rem; font-weight: bold; margin: 1rem 0; text-align: right; }
+
+.footer { text-align: center; padding: 1.5rem; color: #888; font-size: 0.85rem; }
