@@ -13,7 +13,7 @@ class Produk(Base):
     deskripsi = Column(Text, nullable=True)
     harga = Column(Float, nullable=False)
     stok = Column(Integer, default=0)
-    kategori = Column(String(50), nullable=True)  # mis. "bakso", "minuman"
+    kategori = Column(String(50), nullable=True)
     gambar_url = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -38,8 +38,9 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     total_harga = Column(Float, nullable=False, default=0)
-    status = Column(String(20), default="pending")  # pending, dibayar, diproses, selesai, batal
+    status = Column(String(20), default="pending")  # pending, menunggu_pembayaran, dibayar, batal
     payment_method = Column(String(50), nullable=True)
+    midtrans_order_id = Column(String(100), unique=True, nullable=True, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="orders")
