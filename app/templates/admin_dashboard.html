@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Panel Admin — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<h1>Panel Admin — Kelola Produk</h1>
+<div id="admin-check"></div>
+
+<div id="admin-content" style="display: none;">
+    <div class="form-box" style="max-width: 500px; margin: 1rem 0;">
+        <h2>Tambah Produk</h2>
+        <form id="tambah-produk-form">
+            <label>Nama</label>
+            <input type="text" id="p-nama" required>
+            <label>Deskripsi</label>
+            <input type="text" id="p-deskripsi">
+            <label>Harga (Rp)</label>
+            <input type="number" id="p-harga" required min="0">
+            <label>Stok</label>
+            <input type="number" id="p-stok" required min="0">
+            <label>Kategori</label>
+            <input type="text" id="p-kategori" placeholder="mis. bakso, minuman">
+            <label>URL Gambar (opsional)</label>
+            <input type="text" id="p-gambar">
+            <button type="submit">Tambah Produk</button>
+        </form>
+        <p id="form-msg" class="error"></p>
+    </div>
+
+    <h2>Daftar Produk</h2>
+    <div id="daftar-produk">Memuat...</div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const token = localStorage.getItem("access_token");
+
+async function cekAdmin() {
+    const checkDiv = document.getElementById("admin-check");
+    if (!token) {
+        checkDiv.innerHTML = '<p>Silakan <a href="/login">login</a> dulu.</p>';
+        return false;
+    }
+    const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        checkDiv.innerHTML = '<p>Sesi habis, silakan <a href="/login">login</a> lagi.</p>';
+        return false;
+    }
+    const user = await res.json();
+    if (!user.is_admin) {
+        checkDiv.innerHTML = "<p>Akses ditolak — halaman ini khusus admin.</p>";
+        return false;
+    }
+    document.getElementById("admin-content").style.display = "block";
+    return true;
+}
+
+async function muatProduk() {
+    const container = document.getElementById("daftar-produk");
+    const res = await fetch("/produk/?limit=200");
+    const produkList = await res.json();
+
+    if (!produkList.length) {
+        container.innerHTML = "<p>Belum ada produk.</p>";
+        return;
+    }
+
+    let html = '<table class="keranjang-table"><tr><th>Nama</th><th>Harga</th><th>Stok</th><th>Kategori</th><th></th></tr>';
+    for (const p of produkList) {
+        html += `<tr>
+            <td>${p.nama}</td>
+            <td>Rp${p.harga.toLocaleString("id-ID")}</td>
+            <td><input type="number" min="0" value="${p.stok}" data-produk-id="${p.id}" class="stok-input" style="width:70px;"></td>
+            <td>${p.kategori || "-"}</td>
+            <td><button onclick="hapusProduk(${p.id})">Hapus</button></td>
+        </tr>`;
+    }
+    html += "</table>";
+    container.innerHTML = html;
+
+    document.querySelectorAll(".stok-input").forEach((input) => {
+        input.addEventListener("change", () => updateStok(input.dataset.produkId, input.value));
+    });
+}
+
+async function updateStok(produkId, stok) {
+    await fetch(`/produk/${produkId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ stok: parseInt(stok) }),
+    });
+}
+
+async function hapusProduk(produkId) {
+    if (!confirm("Hapus produk ini?")) return;
+    await fetch(`/produk/${produkId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    muatProduk();
+}
+
+document.getElementById("tambah-produk-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("form-msg");
+    msg.textContent = "";
+
+    const body = {
+        nama: document.getElementById("p-nama").value,
+        deskripsi: document.getElementById("p-deskripsi").value || null,
+        harga: parseFloat(document.getElementById("p-harga").value),
+        stok: parseInt(document.getElementById("p-stok").value),
+        kategori: document.getElementById("p-kategori").value || null,
+        gambar_url: document.getElementById("p-gambar").value || null,
+    };
+
+    const res = await fetch("/produk/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        msg.textContent = err.detail || "Gagal menambah produk";
+        return;
+    }
+
+    document.getElementById("tambah-produk-form").reset();
+    muatProduk();
+});
+
+(async () => {
+    if (await cekAdmin()) muatProduk();
+})();
+</script>
+{% endblock %}
