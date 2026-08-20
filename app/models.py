@@ -27,8 +27,16 @@ class User(Base):
     nama = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
-    telepon = Column(String(20), nullable=True)     # <-- TAMBAHAN: No. Telepon / WhatsApp
-    alamat = Column(Text, nullable=True)             # <-- TAMBAHAN: Alamat Lengkap Pengiriman
+    telepon = Column(String(20), nullable=True)         # No. HP / WhatsApp
+
+    # --- RINCIAN ALAMAT TERPISAH ---
+    alamat_jalan = Column(Text, nullable=True)         # Jalan, No. Rumah, RT/RW
+    kelurahan = Column(String(100), nullable=True)     # Kelurahan / Desa
+    kecamatan = Column(String(100), nullable=True)     # Kecamatan
+    kota = Column(String(100), nullable=True)          # Kota / Kabupaten
+    provinsi = Column(String(100), nullable=True)      # Provinsi
+    kode_pos = Column(String(10), nullable=True)       # Kode Pos
+
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
