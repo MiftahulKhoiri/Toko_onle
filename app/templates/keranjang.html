@@ -3,6 +3,7 @@
 
 {% block content %}
 <h1>Keranjang Belanja</h1>
+<p id="keranjang-msg" class="error"></p>
 <div id="keranjang-isi">Memuat...</div>
 {% endblock %}
 
@@ -25,18 +26,29 @@ async function muatKeranjang() {
     const cart = await res.json();
 
     if (!cart.items.length) {
-        container.innerHTML = "<p>Keranjang masih kosong.</p>";
+        container.innerHTML = '<p>Keranjang masih kosong. <a href="/">Yuk pilih menu dulu</a>.</p>';
         return;
     }
 
-    let html = '<table class="keranjang-table"><tr><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th><th></th></tr>';
+    let html = '<table class="keranjang-table"><tr><th>Foto</th><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th><th></th></tr>';
     for (const item of cart.items) {
         const subtotal = item.harga_saat_beli * item.jumlah;
+        const foto = item.produk && item.produk.gambar_url
+            ? `<img src="${item.produk.gambar_url}" class="keranjang-thumb">`
+            : `<div class="keranjang-thumb keranjang-thumb-kosong">🥣</div>`;
+
         html += `<tr>
-            <td>${item.produk.nama}</td>
-            <td>Rp${item.harga_saat_beli.toLocaleString("id-ID")}</td>
-            <td><input type="number" min="0" value="${item.jumlah}" data-item-id="${item.id}" data-produk-id="${item.produk_id}" class="jumlah-input"></td>
-            <td>Rp${subtotal.toLocaleString("id-ID")}</td>
+            <td>${foto}</td>
+            <td>${item.produk ? item.produk.nama : "-"}</td>
+            <td class="mono">Rp${item.harga_saat_beli.toLocaleString("id-ID")}</td>
+            <td>
+                <div class="stepper">
+                    <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah - 1})" ${item.jumlah <= 1 ? "disabled" : ""}>−</button>
+                    <span>${item.jumlah}</span>
+                    <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah + 1})">+</button>
+                </div>
+            </td>
+            <td class="mono">Rp${subtotal.toLocaleString("id-ID")}</td>
             <td><button onclick="hapusItem(${item.id})">Hapus</button></td>
         </tr>`;
     }
@@ -44,20 +56,28 @@ async function muatKeranjang() {
         <p class="total">Total: Rp${cart.total_harga.toLocaleString("id-ID")}</p>
         <button onclick="checkout()">Checkout</button>`;
     container.innerHTML = html;
-
-    document.querySelectorAll(".jumlah-input").forEach((input) => {
-        input.addEventListener("change", () => updateJumlah(input.dataset.itemId, input.dataset.produkId, input.value));
-    });
 }
 
-async function updateJumlah(itemId, produkId, jumlah) {
+async function ubahJumlah(itemId, produkId, jumlahBaru) {
+    const msg = document.getElementById("keranjang-msg");
+    msg.textContent = "";
+
+    if (jumlahBaru < 1) return; // turun di bawah 1 pakai tombol Hapus, bukan stepper
+
     const token = localStorage.getItem("access_token");
-    await fetch(`/keranjang/items/${itemId}`, {
+    const res = await fetch(`/keranjang/items/${itemId}`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ produk_id: parseInt(produkId), jumlah: parseInt(jumlah) }),
+        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahBaru }),
     });
+
+    if (!res.ok) {
+        const err = await res.json();
+        msg.textContent = err.detail || "Gagal mengubah jumlah";
+    }
+
     muatKeranjang();
+    updateCartBadge();
 }
 
 async function hapusItem(itemId) {
@@ -67,6 +87,7 @@ async function hapusItem(itemId) {
         headers: { Authorization: `Bearer ${token}` },
     });
     muatKeranjang();
+    updateCartBadge();
 }
 
 async function checkout() {
