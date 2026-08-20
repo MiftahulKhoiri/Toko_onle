@@ -16,6 +16,7 @@
 
 body { font-family: var(--font-body); background: var(--kertas); color: var(--arang); line-height: 1.6; }
 a { color: inherit; }
+.mono { font-family: var(--font-mono); }
 
 :focus-visible { outline: 3px solid var(--cabai); outline-offset: 2px; }
 
@@ -34,6 +35,7 @@ a { color: inherit; }
 .navbar nav a:hover { color: var(--cabai); opacity: 0.9; }
 .nav-user { color: var(--santan); font-size: 0.9rem; }
 .badge-admin { background: var(--cabai); color: var(--santan); font-family: var(--font-mono); font-size: 0.65rem; font-weight: bold; padding: 0.15rem 0.4rem; border-radius: 3px; margin-left: 0.3rem; vertical-align: middle; }
+.cart-badge { display: none; background: var(--cabai); color: var(--santan); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; padding: 0.05rem 0.45rem; border-radius: 999px; margin-left: 0.2rem; }
 
 /* Layout dasar */
 .container { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1.2rem; }
@@ -71,12 +73,12 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .produk-card button:active { transform: translateY(1px); }
 .produk-card button:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
 
-/* Form login/register */
+/* Form login/register/admin */
 .form-box { max-width: 380px; margin: 2rem auto; background: var(--santan); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 14px rgba(43,29,20,0.12); border-top: 5px solid var(--cabai); }
 .form-box h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
 .form-box label { display: block; margin-top: 1rem; font-size: 0.85rem; font-weight: 600; color: #6b5a49; }
-.form-box input { width: 100%; padding: 0.55rem 0.6rem; margin-top: 0.3rem; border: 1.5px solid #e3d7c0; border-radius: 6px; font-family: var(--font-body); background: var(--kertas); }
-.form-box input:focus { border-color: var(--cabai); outline: none; }
+.form-box input, .form-box textarea { width: 100%; padding: 0.55rem 0.6rem; margin-top: 0.3rem; border: 1.5px solid #e3d7c0; border-radius: 6px; font-family: var(--font-body); background: var(--kertas); }
+.form-box input:focus, .form-box textarea:focus { border-color: var(--cabai); outline: none; }
 .form-box button { width: 100%; margin-top: 1.6rem; padding: 0.65rem; background: var(--cabai); color: var(--santan); }
 .form-box button:hover { background: var(--cabai-tua); }
 .form-box p { margin-top: 1rem; font-size: 0.85rem; }
@@ -86,12 +88,19 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 /* Tabel keranjang & pesanan */
 .keranjang-table { width: 100%; border-collapse: collapse; background: var(--santan); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
 .keranjang-table th { background: var(--kuah); color: var(--santan); text-align: left; padding: 0.7rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
-.keranjang-table td { padding: 0.75rem 0.7rem; border-bottom: 1px solid #efe6d3; font-size: 0.9rem; }
-.keranjang-table td:nth-child(2), .keranjang-table td:nth-child(4) { font-family: var(--font-mono); }
+.keranjang-table td { padding: 0.75rem 0.7rem; border-bottom: 1px solid #efe6d3; font-size: 0.9rem; vertical-align: middle; }
 .keranjang-table input[type="number"] { width: 60px; padding: 0.3rem; border: 1.5px solid #e3d7c0; border-radius: 5px; font-family: var(--font-mono); }
 .keranjang-table select { padding: 0.3rem 0.5rem; border-radius: 5px; border: 1.5px solid #e3d7c0; font-family: var(--font-body); }
 .keranjang-table button { padding: 0.4rem 0.7rem; background: transparent; border: 1.5px solid var(--cabai-tua); color: var(--cabai-tua); }
 .keranjang-table button:hover { background: var(--cabai); color: var(--santan); border-color: var(--cabai); }
+
+.keranjang-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
+.keranjang-thumb-kosong { display: flex; align-items: center; justify-content: center; background: var(--kertas); font-size: 1.3rem; }
+
+.stepper { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--kertas); border-radius: 6px; padding: 0.15rem 0.3rem; }
+.stepper button { width: 26px; height: 26px; border-radius: 5px; background: var(--cabai); color: var(--santan); font-size: 1rem; line-height: 1; padding: 0; }
+.stepper button:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
+.stepper span { min-width: 20px; text-align: center; font-family: var(--font-mono); font-weight: 700; }
 
 .total { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; color: var(--kuah); margin: 1.2rem 0; text-align: right; }
 #keranjang-isi > button { background: var(--cabai); color: var(--santan); padding: 0.7rem 1.4rem; display: block; margin-left: auto; }
