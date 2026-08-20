@@ -19,6 +19,18 @@ UKURAN_MAKS = 5 * 1024 * 1024  # 5MB
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
+def _hapus_file_foto(gambar_url: Optional[str]) -> None:
+    """Hapus file foto lama dari disk — cuma kalau itu file upload lokal, bukan URL luar."""
+    if not gambar_url or not gambar_url.startswith("/static/img/produk/"):
+        return
+    path_file = os.path.join(UPLOAD_DIR, os.path.basename(gambar_url))
+    if os.path.isfile(path_file):
+        try:
+            os.remove(path_file)
+        except OSError:
+            pass  # kalau gagal hapus, jangan sampai bikin request utama ikut gagal
+
+
 @router.post("/upload-foto")
 async def upload_foto(
     file: UploadFile = File(...),
@@ -88,11 +100,18 @@ def update_produk(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
     data = produk.model_dump(exclude_unset=True)
+    foto_lama = db_produk.gambar_url
+    ganti_foto = "gambar_url" in data and data["gambar_url"] != foto_lama
+
     for field, value in data.items():
         setattr(db_produk, field, value)
 
     db.commit()
     db.refresh(db_produk)
+
+    if ganti_foto:
+        _hapus_file_foto(foto_lama)  # hapus foto lama SETELAH perubahan tersimpan
+
     return db_produk
 
 
@@ -106,6 +125,8 @@ def delete_produk(
     if not db_produk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
+    foto = db_produk.gambar_url
     db.delete(db_produk)
     db.commit()
+    _hapus_file_foto(foto)
     return None
