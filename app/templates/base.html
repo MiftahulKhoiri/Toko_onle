@@ -11,16 +11,11 @@
 </head>
 <body>
     <header class="navbar">
-        <a href="/" class="brand">
-            <span class="logo">🍢</span>
-            <span class="brand-name">{{ nama_toko }}</span>
-        </a>
-
-        <nav class="nav-links">
+        <a href="/" class="brand">🍢 {{ nama_toko }}</a>
+        <nav>
             <a href="/">Produk</a>
-            <a href="/keranjang-saya">Keranjang</a>
-            
-            <div id="nav-auth" class="nav-user-container"></div>
+            <a href="/keranjang-saya">Keranjang <span id="cart-badge" class="cart-badge"></span></a>
+            <span id="nav-auth"></span>
         </nav>
     </header>
 
