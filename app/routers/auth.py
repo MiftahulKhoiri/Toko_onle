@@ -24,6 +24,8 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
         nama=user.nama,
         email=user.email,
         hashed_password=hash_password(user.password),
+        telepon=user.telepon,  # Menyimpan telepon jika diisi saat registrasi
+        alamat=user.alamat,    # Menyimpan alamat jika diisi saat registrasi
     )
     db.add(db_user)
     db.commit()
@@ -48,4 +50,29 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @router.get("/me", response_model=schemas.UserResponse)
 def read_current_user(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+
+# ---------- TAMBAHAN: Endpoint Update Profil ----------
+@router.put("/me", response_model=schemas.UserResponse)
+def update_profile(
+    user_data: schemas.UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """
+    Endpoint untuk memperbarui data profil user:
+    - Nama Lengkap
+    - Nomor Telepon / WhatsApp
+    - Alamat Lengkap Pengiriman
+    """
+    if user_data.nama is not None:
+        current_user.nama = user_data.nama
+    if user_data.telepon is not None:
+        current_user.telepon = user_data.telepon
+    if user_data.alamat is not None:
+        current_user.alamat = user_data.alamat
+
+    db.commit()
+    db.refresh(current_user)
     return current_user
