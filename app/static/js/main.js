@@ -1,11 +1,11 @@
 // app/static/js/main.js
-async function updateNavAuthState() {
+async function renderNavAuth() {
     const token = localStorage.getItem("access_token");
     const navAuth = document.getElementById("nav-auth");
     if (!navAuth) return;
 
     if (!token) {
-        navAuth.innerHTML = '<a href="/login">Login</a>';
+        navAuth.innerHTML = '<a href="/login">Login</a> <a href="/register">Daftar</a>';
         return;
     }
 
@@ -13,23 +13,22 @@ async function updateNavAuthState() {
         const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) {
             localStorage.removeItem("access_token");
-            navAuth.innerHTML = '<a href="/login">Login</a>';
+            navAuth.innerHTML = '<a href="/login">Login</a> <a href="/register">Daftar</a>';
             return;
         }
         const user = await res.json();
 
-        let html = `<span class="nav-user">Halo, ${user.nama}`;
-        if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
-        html += "</span>";
-
+        let html = "";
         if (user.is_admin) {
-            html += ' <a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a>';
+            html += '<a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a> ';
         }
-        html += ' <a href="#" onclick="logout()">Logout</a>';
+        html += `<a href="/profil" class="nav-profil">👤 ${user.nama}`;
+        if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
+        html += "</a>";
 
         navAuth.innerHTML = html;
     } catch (err) {
-        navAuth.innerHTML = '<a href="/login">Login</a>';
+        navAuth.innerHTML = '<a href="/login">Login</a> <a href="/register">Daftar</a>';
     }
 }
 
@@ -90,5 +89,5 @@ async function tambahKeKeranjang(produkId) {
     alert("Ditambahkan ke keranjang!");
 }
 
-updateNavAuthState();
+renderNavAuth();
 updateCartBadge();
