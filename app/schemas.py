@@ -38,8 +38,15 @@ class ProdukResponse(ProdukBase):
 class UserBase(BaseModel):
     nama: str
     email: EmailStr
-    telepon: Optional[str] = None  # <-- TAMBAHAN: Nomor Telepon
-    alamat: Optional[str] = None   # <-- TAMBAHAN: Alamat Lengkap
+    telepon: Optional[str] = None
+    
+    # --- RINCIAN ALAMAT TERPISAH ---
+    alamat_jalan: Optional[str] = None
+    kelurahan: Optional[str] = None
+    kecamatan: Optional[str] = None
+    kota: Optional[str] = None
+    provinsi: Optional[str] = None
+    kode_pos: Optional[str] = None
 
 
 class UserCreate(UserBase):
@@ -48,8 +55,13 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     nama: Optional[str] = None
-    telepon: Optional[str] = None  # <-- TAMBAHAN: Update Telepon
-    alamat: Optional[str] = None   # <-- TAMBAHAN: Update Alamat
+    telepon: Optional[str] = None
+    alamat_jalan: Optional[str] = None
+    kelurahan: Optional[str] = None
+    kecamatan: Optional[str] = None
+    kota: Optional[str] = None
+    provinsi: Optional[str] = None
+    kode_pos: Optional[str] = None
 
 
 class UserResponse(UserBase):
