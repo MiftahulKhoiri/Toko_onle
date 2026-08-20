@@ -41,3 +41,7 @@ def admin_dashboard_page(request: Request):
 @router.get("/panel-admin/pesanan")
 def admin_pesanan_page(request: Request):
     return templates.TemplateResponse(request, "admin_pesanan.html", {"nama_toko": "Salome Cakyud"})
+
+@router.get("/profil", response_class=HTMLResponse)
+def halaman_profil(request: Request):
+    return templates.TemplateResponse("profil.html", {"request": request, "nama_toko": NAMA_TOKO})
