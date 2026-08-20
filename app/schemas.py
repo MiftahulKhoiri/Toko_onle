@@ -38,10 +38,18 @@ class ProdukResponse(ProdukBase):
 class UserBase(BaseModel):
     nama: str
     email: EmailStr
+    telepon: Optional[str] = None  # <-- TAMBAHAN: Nomor Telepon
+    alamat: Optional[str] = None   # <-- TAMBAHAN: Alamat Lengkap
 
 
 class UserCreate(UserBase):
     password: str
+
+
+class UserUpdate(BaseModel):
+    nama: Optional[str] = None
+    telepon: Optional[str] = None  # <-- TAMBAHAN: Update Telepon
+    alamat: Optional[str] = None   # <-- TAMBAHAN: Update Alamat
 
 
 class UserResponse(UserBase):
