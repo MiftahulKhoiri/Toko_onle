@@ -2,14 +2,14 @@
 {% block title %}Profil Saya — {{ nama_toko }}{% endblock %}
 
 {% block content %}
-<div class="form-box" style="max-width: 500px; margin: 2rem auto;">
+<div class="form-box" style="max-width: 600px; margin: 2rem auto;">
     <h1>Profil & Alamat Pengiriman</h1>
-    
-    <div id="identitas-container" class="profile-info" style="margin-bottom: 1.5rem;">
+
+    <div id="identitas-container" class="profile-info" style="margin-bottom: 1.5rem; line-height: 1.6;">
         <p><strong>Nama Lengkap:</strong> <span id="view-nama">Memuat...</span></p>
         <p><strong>Email:</strong> <span id="view-email">Memuat...</span></p>
         <p><strong>No. Telepon:</strong> <span id="view-telepon">-</span></p>
-        <p><strong>Alamat Pengiriman:</strong> <span id="view-alamat">-</span></p>
+        <p><strong>Alamat Lengkap:</strong> <span id="view-alamat-gabungan">-</span></p>
     </div>
 
     <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
@@ -25,10 +25,37 @@
         <label for="edit-telepon">No. Telepon / WhatsApp</label>
         <input type="tel" id="edit-telepon" placeholder="Contoh: 08123456789">
 
-        <label for="edit-alamat">Alamat Lengkap Pengiriman</label>
-        <textarea id="edit-alamat" rows="3" placeholder="Jl. Merdeka No. 12, RT 01/RW 02, Kecamatan, Kota..."></textarea>
+        <h3 style="margin-top: 1.5rem; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">Rincian Alamat Pengiriman</h3>
 
-        <button type="submit" style="margin-top: 1rem;">Simpan Perubahan</button>
+        <label for="edit-alamat-jalan">Jalan, No. Rumah, RT/RW</label>
+        <textarea id="edit-alamat-jalan" rows="2" placeholder="Jl. Merdeka No. 12, RT 01/RW 02"></textarea>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label for="edit-kelurahan">Kelurahan / Desa</label>
+                <input type="text" id="edit-kelurahan" placeholder="Kelurahan">
+            </div>
+            <div>
+                <label for="edit-kecamatan">Kecamatan</label>
+                <input type="text" id="edit-kecamatan" placeholder="Kecamatan">
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div>
+                <label for="edit-kota">Kota / Kabupaten</label>
+                <input type="text" id="edit-kota" placeholder="Kota / Kabupaten">
+            </div>
+            <div>
+                <label for="edit-provinsi">Provinsi</label>
+                <input type="text" id="edit-provinsi" placeholder="Provinsi">
+            </div>
+        </div>
+
+        <label for="edit-kode-pos">Kode Pos</label>
+        <input type="text" id="edit-kode-pos" placeholder="12345" style="max-width: 200px;">
+
+        <button type="submit" style="margin-top: 1.5rem; width: 100%;">Simpan Perubahan</button>
     </form>
     <p id="profil-msg" class="error"></p>
 
@@ -62,33 +89,56 @@ async function loadProfil() {
         }
 
         const user = await res.json();
-        
+
         // Tampilkan Identitas
         document.getElementById("view-nama").textContent = user.nama || "-";
         document.getElementById("view-email").textContent = user.email || "-";
         document.getElementById("view-telepon").textContent = user.telepon || "Belum diisi";
-        document.getElementById("view-alamat").textContent = user.alamat || "Belum diisi";
 
-        // Form Edit
+        // Menggabungkan string alamat untuk tampilan ringkas
+        const komponenAlamat = [
+            user.alamat_jalan,
+            user.kelurahan ? `Kel. ${user.kelurahan}` : null,
+            user.kecamatan ? `Kec. ${user.kecamatan}` : null,
+            user.kota,
+            user.provinsi,
+            user.kode_pos
+        ].filter(Boolean);
+
+        document.getElementById("view-alamat-gabungan").textContent = 
+            komponenAlamat.length > 0 ? komponenAlamat.join(", ") : "Belum diisi lengkap";
+
+        // Mengisi Form Edit
         document.getElementById("edit-nama").value = user.nama || "";
         document.getElementById("edit-email").value = user.email || "";
         document.getElementById("edit-telepon").value = user.telepon || "";
-        document.getElementById("edit-alamat").value = user.alamat || "";
+        document.getElementById("edit-alamat-jalan").value = user.alamat_jalan || "";
+        document.getElementById("edit-kelurahan").value = user.kelurahan || "";
+        document.getElementById("edit-kecamatan").value = user.kecamatan || "";
+        document.getElementById("edit-kota").value = user.kota || "";
+        document.getElementById("edit-provinsi").value = user.provinsi || "";
+        document.getElementById("edit-kode-pos").value = user.kode_pos || "";
     } catch (err) {
         console.error("Gagal memuat data profil", err);
     }
 }
 
-// Simpan Data Profil
+// Simpan Data Profil (Mengirim payload terpisah)
 document.getElementById("edit-profil-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = document.getElementById("profil-msg");
+    msg.style.color = "";
     msg.textContent = "";
 
     const payload = {
         nama: document.getElementById("edit-nama").value,
-        telepon: document.getElementById("edit-telepon").value,
-        alamat: document.getElementById("edit-alamat").value
+        telepon: document.getElementById("edit-telepon").value || null,
+        alamat_jalan: document.getElementById("edit-alamat-jalan").value || null,
+        kelurahan: document.getElementById("edit-kelurahan").value || null,
+        kecamatan: document.getElementById("edit-kecamatan").value || null,
+        kota: document.getElementById("edit-kota").value || null,
+        provinsi: document.getElementById("edit-provinsi").value || null,
+        kode_pos: document.getElementById("edit-kode-pos").value || null,
     };
 
     try {
@@ -102,14 +152,17 @@ document.getElementById("edit-profil-form").addEventListener("submit", async (e)
         });
 
         if (res.ok) {
-            alert("Profil berhasil diperbarui!");
+            msg.style.color = "green";
+            msg.textContent = "Profil berhasil diperbarui!";
             loadProfil();
             if (typeof renderNavAuth === "function") renderNavAuth();
         } else {
             const err = await res.json();
+            msg.style.color = "red";
             msg.textContent = err.detail || "Gagal memperbarui profil";
         }
     } catch (err) {
+        msg.style.color = "red";
         msg.textContent = "Terjadi kesalahan koneksi";
     }
 });
