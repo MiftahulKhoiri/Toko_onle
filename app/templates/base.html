@@ -11,11 +11,13 @@
 </head>
 <body>
     <header class="navbar">
-        <a href="/" class="brand">🍢 {{ nama_toko }}</a>
-        <nav>
-            <a href="/">Produk</a>
-            <a href="/keranjang-saya">Keranjang <span id="cart-badge" class="cart-badge"></span></a>
+        <div class="navbar-top">
+            <a href="/" class="brand">🍢 {{ nama_toko }}</a>
             <span id="nav-auth"></span>
+        </div>
+        <nav class="navbar-bottom">
+            <a href="/">🍜 Produk</a>
+            <a href="/keranjang-saya">🛒 Keranjang <span id="cart-badge" class="cart-badge"></span></a>
         </nav>
     </header>
 
