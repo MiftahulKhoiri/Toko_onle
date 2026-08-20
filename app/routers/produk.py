@@ -14,7 +14,7 @@ router = APIRouter(prefix="/produk", tags=["produk"])
 def list_produk(
     kategori: Optional[str] = None,
     skip: int = 0,
-    limit: int = 50,
+    limit: int = 200,
     db: Session = Depends(get_db),
 ):
     query = db.query(models.Produk)
@@ -55,6 +55,7 @@ def update_produk(
     if not db_produk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
+    # Mengambil hanya data yang diubah dari request body
     data = produk.model_dump(exclude_unset=True)
     for field, value in data.items():
         setattr(db_produk, field, value)
