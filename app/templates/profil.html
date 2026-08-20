@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Profil Saya — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<div class="form-box" style="max-width: 500px; margin: 2rem auto;">
+    <h1>Profil Saya</h1>
+    
+    <div id="identitas-container" class="profile-info" style="margin-bottom: 1.5rem;">
+        <p><strong>Nama:</strong> <span id="view-nama">Memuat...</span></p>
+        <p><strong>Email:</strong> <span id="view-email">Memuat...</span></p>
+        <p><strong>Tipe Akun:</strong> <span id="view-role">Memuat...</span></p>
+    </div>
+
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
+
+    <h2>Edit Profil</h2>
+    <form id="edit-profil-form">
+        <label for="edit-nama">Nama Lengkap</label>
+        <input type="text" id="edit-nama" required>
+
+        <label for="edit-email">Email</label>
+        <input type="email" id="edit-email" required disabled style="background-color: #eee;" title="Email tidak dapat diubah">
+
+        <button type="submit" style="margin-top: 1rem;">Simpan Perubahan</button>
+    </form>
+    <p id="profil-msg" class="error"></p>
+
+    <hr style="margin: 2rem 0; border: none; border-top: 1px solid #ddd;">
+
+    <button onclick="logout()" style="background-color: #dc3545; color: white; width: 100%;">
+        🚪 Logout / Keluar
+    </button>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const token = localStorage.getItem("access_token");
+
+async function loadProfil() {
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    try {
+        const res = await fetch("/auth/me", {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+            localStorage.removeItem("access_token");
+            window.location.href = "/login";
+            return;
+        }
+
+        const user = await res.json();
+        
+        // Tampilkan Identitas
+        document.getElementById("view-nama").textContent = user.nama;
+        document.getElementById("view-email").textContent = user.email;
+        document.getElementById("view-role").textContent = user.is_admin ? "Admin" : "Pelanggan";
+
+        // Isi nilai awal form edit
+        document.getElementById("edit-nama").value = user.nama;
+        document.getElementById("edit-email").value = user.email;
+    } catch (err) {
+        console.error("Gagal memuat data profil", err);
+    }
+}
+
+// Handler Submit Edit Profil
+document.getElementById("edit-profil-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("profil-msg");
+    msg.textContent = "";
+
+    const namaBaru = document.getElementById("edit-nama").value;
+
+    try {
+        const res = await fetch("/auth/me", {
+            method: "PUT",
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ nama: namaBaru })
+        });
+
+        if (res.ok) {
+            alert("Profil berhasil diperbarui!");
+            loadProfil();
+            renderNavAuth(); // Update nama di header
+        } else {
+            const err = await res.json();
+            msg.textContent = err.detail || "Gagal memperbarui profil";
+        }
+    } catch (err) {
+        msg.textContent = "Terjadi kesalahan koneksi";
+    }
+});
+
+// Fungsi Logout
+function logout() {
+    if (confirm("Apakah kamu yakin ingin keluar?")) {
+        localStorage.removeItem("access_token");
+        window.location.href = "/";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", loadProfil);
+</script>
+{% endblock %}
