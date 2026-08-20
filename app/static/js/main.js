@@ -21,9 +21,9 @@ async function renderNavAuth() {
 
         if (res.ok) {
             const user = await res.json();
-            
-            // Link tambahan jika user adalah admin
-            let adminLink = user.is_admin ? '<a href="/admin/dashboard" class="nav-admin-link">Admin</a>' : '';
+
+            // PERBAIKAN: Mengarahkan link admin ke /panel-admin
+            let adminLink = user.is_admin ? '<a href="/panel-admin" class="nav-admin-link">Admin</a>' : '';
 
             // Menampilkan nama user di pojok kanan yang mengarah ke /profil
             navAuth.innerHTML = `
@@ -49,7 +49,7 @@ async function renderNavAuth() {
     }
 }
 
-// Fungsi Tambah Ke Keranjang (Dipakai di halaman produk)
+// Fungsi Tambah Ke Keranjang
 async function tambahKeKeranjang(produkId) {
     const token = localStorage.getItem("access_token");
     if (!token) {
