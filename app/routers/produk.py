@@ -1,6 +1,9 @@
 # app/routers/produk.py
+import os
+import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -8,6 +11,35 @@ from app.database import get_db
 from app.dependencies import get_current_admin
 
 router = APIRouter(prefix="/produk", tags=["produk"])
+
+UPLOAD_DIR = "app/static/img/produk"
+EKSTENSI_DIIZINKAN = {".jpg", ".jpeg", ".png", ".webp"}
+UKURAN_MAKS = 5 * 1024 * 1024  # 5MB
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@router.post("/upload-foto")
+async def upload_foto(
+    file: UploadFile = File(...),
+    _: models.User = Depends(get_current_admin),
+):
+    ekstensi = os.path.splitext(file.filename or "")[1].lower()
+    if ekstensi not in EKSTENSI_DIIZINKAN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format foto harus jpg, jpeg, png, atau webp",
+        )
+
+    isi_file = await file.read()
+    if len(isi_file) > UKURAN_MAKS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 5MB")
+
+    nama_file = f"{uuid.uuid4().hex}{ekstensi}"
+    with open(os.path.join(UPLOAD_DIR, nama_file), "wb") as f:
+        f.write(isi_file)
+
+    return {"gambar_url": f"/static/img/produk/{nama_file}"}
 
 
 @router.get("/", response_model=List[schemas.ProdukResponse])
@@ -55,7 +87,6 @@ def update_produk(
     if not db_produk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
-    # Mengambil hanya data yang diubah dari request body
     data = produk.model_dump(exclude_unset=True)
     for field, value in data.items():
         setattr(db_produk, field, value)
