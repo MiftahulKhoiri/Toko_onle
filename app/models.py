@@ -15,6 +15,8 @@ class Produk(Base):
     stok = Column(Integer, default=0)
     kategori = Column(String(50), nullable=True)
     gambar_url = Column(String(255), nullable=True)
+    is_ready = Column(Boolean, default=True)
+    is_po = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     order_items = relationship("OrderItem", back_populates="produk")
