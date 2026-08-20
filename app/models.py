@@ -27,6 +27,8 @@ class User(Base):
     nama = Column(String(100), nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    telepon = Column(String(20), nullable=True)     # <-- TAMBAHAN: No. Telepon / WhatsApp
+    alamat = Column(Text, nullable=True)             # <-- TAMBAHAN: Alamat Lengkap Pengiriman
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
