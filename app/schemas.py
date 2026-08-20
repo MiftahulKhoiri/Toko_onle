@@ -12,6 +12,8 @@ class ProdukBase(BaseModel):
     stok: int = 0
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
+    is_ready: bool = True     # Status Ready (Default: True)
+    is_po: bool = False       # Status Pre-Order (Default: False)
 
 
 class ProdukCreate(ProdukBase):
@@ -25,6 +27,8 @@ class ProdukUpdate(BaseModel):
     stok: Optional[int] = None
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
+    is_ready: Optional[bool] = None  # Bisa diupdate lewat admin
+    is_po: Optional[bool] = None     # Bisa diupdate lewat admin
 
 
 class ProdukResponse(ProdukBase):
@@ -39,7 +43,7 @@ class UserBase(BaseModel):
     nama: str
     email: EmailStr
     telepon: Optional[str] = None
-    
+
     # --- RINCIAN ALAMAT TERPISAH ---
     alamat_jalan: Optional[str] = None
     kelurahan: Optional[str] = None
