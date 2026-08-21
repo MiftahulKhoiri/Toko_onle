@@ -30,30 +30,36 @@ async function muatKeranjang() {
         return;
     }
 
-    let html = '<table class="keranjang-table"><tr><th>Foto</th><th>Produk</th><th>Harga</th><th>Jumlah</th><th>Subtotal</th><th></th></tr>';
+    let html = '<div class="cart-list">';
     for (const item of cart.items) {
         const subtotal = item.harga_saat_beli * item.jumlah;
+        const nama = item.produk ? item.produk.nama : "-";
         const foto = item.produk && item.produk.gambar_url
             ? `<img src="${item.produk.gambar_url}" class="keranjang-thumb">`
             : `<div class="keranjang-thumb keranjang-thumb-kosong">🥣</div>`;
 
-        html += `<tr>
-            <td>${foto}</td>
-            <td>${item.produk ? item.produk.nama : "-"}</td>
-            <td class="mono">Rp${item.harga_saat_beli.toLocaleString("id-ID")}</td>
-            <td>
+        html += `
+        <div class="cart-item">
+            <div class="cart-item-top">
+                ${foto}
+                <div class="cart-item-info">
+                    <h3>${nama}</h3>
+                    <p class="mono">Rp${item.harga_saat_beli.toLocaleString("id-ID")}</p>
+                </div>
+                <button type="button" class="cart-item-hapus" onclick="hapusItem(${item.id})" aria-label="Hapus ${nama}">✕</button>
+            </div>
+            <div class="cart-item-bottom">
                 <div class="stepper">
                     <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah - 1})" ${item.jumlah <= 1 ? "disabled" : ""}>−</button>
                     <span>${item.jumlah}</span>
                     <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah + 1})">+</button>
                 </div>
-            </td>
-            <td class="mono">Rp${subtotal.toLocaleString("id-ID")}</td>
-            <td><button onclick="hapusItem(${item.id})">Hapus</button></td>
-        </tr>`;
+                <p class="cart-item-subtotal mono">Rp${subtotal.toLocaleString("id-ID")}</p>
+            </div>
+        </div>`;
     }
-    html += `</table>
-        <p class="total">Total: Rp${cart.total_harga.toLocaleString("id-ID")}</p>
+    html += "</div>";
+    html += `<p class="total">Total: Rp${cart.total_harga.toLocaleString("id-ID")}</p>
         <button onclick="checkout()">Checkout</button>`;
     container.innerHTML = html;
 }
@@ -62,7 +68,7 @@ async function ubahJumlah(itemId, produkId, jumlahBaru) {
     const msg = document.getElementById("keranjang-msg");
     msg.textContent = "";
 
-    if (jumlahBaru < 1) return; // turun di bawah 1 pakai tombol Hapus, bukan stepper
+    if (jumlahBaru < 1) return;
 
     const token = localStorage.getItem("access_token");
     const res = await fetch(`/keranjang/items/${itemId}`, {
