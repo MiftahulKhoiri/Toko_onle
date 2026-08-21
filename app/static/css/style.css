@@ -36,9 +36,7 @@ a { color: inherit; }
 #nav-auth { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; }
 #nav-auth > a { color: var(--santan); text-decoration: none; font-weight: 600; font-size: 0.9rem; }
 #nav-auth > a:hover { color: var(--cabai); }
-.nav-profil {
-    background: rgba(255,255,255,0.1); padding: 0.35rem 0.75rem; border-radius: 999px;
-}
+.nav-profil { background: rgba(255,255,255,0.1); padding: 0.35rem 0.75rem; border-radius: 999px; }
 .nav-profil:hover { background: rgba(255,255,255,0.18); color: var(--santan) !important; }
 .badge-admin { background: var(--cabai); color: var(--santan); font-family: var(--font-mono); font-size: 0.65rem; font-weight: bold; padding: 0.15rem 0.4rem; border-radius: 3px; margin-left: 0.2rem; vertical-align: middle; }
 .cart-badge { display: none; background: var(--cabai); color: var(--santan); font-family: var(--font-mono); font-size: 0.7rem; font-weight: 700; padding: 0.05rem 0.45rem; border-radius: 999px; margin-left: 0.2rem; }
@@ -91,17 +89,26 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .form-box a { color: var(--cabai); font-weight: 600; }
 .error { color: var(--cabai-tua); margin-top: 0.8rem; font-size: 0.85rem; }
 
-/* Tabel keranjang & pesanan */
-.keranjang-table { width: 100%; border-collapse: collapse; background: var(--santan); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
-.keranjang-table th { background: var(--kuah); color: var(--santan); text-align: left; padding: 0.7rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
-.keranjang-table td { padding: 0.75rem 0.7rem; border-bottom: 1px solid #efe6d3; font-size: 0.9rem; vertical-align: middle; }
-.keranjang-table input[type="number"] { width: 60px; padding: 0.3rem; border: 1.5px solid #e3d7c0; border-radius: 5px; font-family: var(--font-mono); }
-.keranjang-table select { padding: 0.3rem 0.5rem; border-radius: 5px; border: 1.5px solid #e3d7c0; font-family: var(--font-body); }
-.keranjang-table button { padding: 0.4rem 0.7rem; background: transparent; border: 1.5px solid var(--cabai-tua); color: var(--cabai-tua); }
-.keranjang-table button:hover { background: var(--cabai); color: var(--santan); border-color: var(--cabai); }
+/* Kartu keranjang (dipakai halaman /keranjang-saya) */
+.cart-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.cart-item { background: var(--santan); border-radius: 10px; padding: 0.8rem; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.cart-item-top { display: flex; align-items: flex-start; gap: 0.7rem; }
+.cart-item-info { flex: 1; min-width: 0; }
+.cart-item-info h3 { font-size: 0.98rem; line-height: 1.35; }
+.cart-item-info p { font-size: 0.85rem; color: #6b5a49; margin-top: 0.15rem; }
+.cart-item-hapus {
+    background: transparent; border: none; color: var(--cabai-tua); font-size: 1.1rem;
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; padding: 0;
+}
+.cart-item-hapus:hover { background: #fbe8e4; }
+.cart-item-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px dashed #e3d7c0;
+}
+.cart-item-subtotal { font-size: 1rem; font-weight: 700; color: var(--kuah); }
 
-.keranjang-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
-.keranjang-thumb-kosong { display: flex; align-items: center; justify-content: center; background: var(--kertas); font-size: 1.3rem; }
+.keranjang-thumb { width: 58px; height: 58px; object-fit: cover; border-radius: 8px; display: block; flex-shrink: 0; }
+.keranjang-thumb-kosong { display: flex; align-items: center; justify-content: center; background: var(--kertas); font-size: 1.5rem; }
 
 .stepper { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--kertas); border-radius: 6px; padding: 0.15rem 0.3rem; }
 .stepper button { width: 26px; height: 26px; border-radius: 5px; background: var(--cabai); color: var(--santan); font-size: 1rem; line-height: 1; padding: 0; }
@@ -110,6 +117,15 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 
 .total { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; color: var(--kuah); margin: 1.2rem 0; text-align: right; }
 #keranjang-isi > button { background: var(--cabai); color: var(--santan); padding: 0.7rem 1.4rem; display: block; margin-left: auto; }
+
+/* Tabel dipakai panel admin (kelola produk & pesanan) — TIDAK berubah */
+.keranjang-table { width: 100%; border-collapse: collapse; background: var(--santan); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.keranjang-table th { background: var(--kuah); color: var(--santan); text-align: left; padding: 0.7rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.keranjang-table td { padding: 0.75rem 0.7rem; border-bottom: 1px solid #efe6d3; font-size: 0.9rem; vertical-align: middle; }
+.keranjang-table input[type="number"] { width: 60px; padding: 0.3rem; border: 1.5px solid #e3d7c0; border-radius: 5px; font-family: var(--font-mono); }
+.keranjang-table select { padding: 0.3rem 0.5rem; border-radius: 5px; border: 1.5px solid #e3d7c0; font-family: var(--font-body); }
+.keranjang-table button { padding: 0.4rem 0.7rem; background: transparent; border: 1.5px solid var(--cabai-tua); color: var(--cabai-tua); }
+.keranjang-table button:hover { background: var(--cabai); color: var(--santan); border-color: var(--cabai); }
 
 .footer { text-align: center; padding: 2rem 1rem; color: #8a7d68; font-size: 0.85rem; border-top: 1px solid #e3d7c0; }
 
