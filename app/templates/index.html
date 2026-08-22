@@ -3,9 +3,19 @@
 
 {% block content %}
 <h1>Menu {{ nama_toko }}</h1>
-<div class="produk-grid">
+
+<input
+    type="search"
+    id="cari-produk"
+    class="cari-produk"
+    placeholder="Cari menu... (mis. bakso, tahu)"
+    oninput="filterProduk()"
+    autocomplete="off"
+>
+
+<div class="produk-grid" id="produk-grid">
     {% for produk in produk_list %}
-    <div class="produk-card">
+    <div class="produk-card" data-cari="{{ (produk.nama ~ ' ' ~ (produk.deskripsi or '') ~ ' ' ~ (produk.kategori or '')) | lower }}">
         <a href="/menu/{{ produk.id }}" class="produk-link">
             <div class="produk-media">
                 {% if produk.gambar_url %}
@@ -31,4 +41,23 @@
     <p>Belum ada produk.</p>
     {% endfor %}
 </div>
+<p id="cari-kosong" class="cari-kosong" style="display:none;">Produk yang kamu cari nggak ketemu, coba kata kunci lain.</p>
+{% endblock %}
+
+{% block script %}
+<script>
+function filterProduk() {
+    const kataKunci = document.getElementById("cari-produk").value.trim().toLowerCase();
+    const kartuList = document.querySelectorAll("#produk-grid .produk-card");
+    let adaYangTampil = false;
+
+    kartuList.forEach((kartu) => {
+        const cocok = kartu.dataset.cari.includes(kataKunci);
+        kartu.style.display = cocok ? "" : "none";
+        if (cocok) adaYangTampil = true;
+    });
+
+    document.getElementById("cari-kosong").style.display = (adaYangTampil || kartuList.length === 0) ? "none" : "block";
+}
+</script>
 {% endblock %}
