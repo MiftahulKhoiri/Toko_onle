@@ -22,6 +22,14 @@ def home(request: Request, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/menu/{produk_id}")
+def detail_produk_page(produk_id: int, request: Request, db: Session = Depends(get_db)):
+    produk = db.query(models.Produk).filter(models.Produk.id == produk_id).first()
+    return templates.TemplateResponse(
+        request, "detail_produk.html", {"nama_toko": NAMA_TOKO, "produk": produk}
+    )
+
+
 @router.get("/login")
 def login_page(request: Request):
     return templates.TemplateResponse(
