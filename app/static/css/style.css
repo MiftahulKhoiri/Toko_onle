@@ -182,3 +182,18 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
     .navbar .brand { font-size: 1.15rem; }
     .navbar-bottom { gap: 0.9rem; }
 }
+
+#toast-container {
+    position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; gap: 0.5rem; z-index: 1000;
+    width: calc(100% - 2.4rem); max-width: 380px; align-items: center;
+}
+.toast {
+    background: var(--kuah); color: var(--santan); font-weight: 600; font-size: 0.9rem;
+    padding: 0.75rem 1.1rem; border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+    opacity: 0; transform: translateY(12px); transition: opacity 0.25s ease, transform 0.25s ease;
+    text-align: center; width: 100%;
+}
+.toast-show { opacity: 1; transform: translateY(0); }
+.toast-sukses { background: var(--daun); }
+.toast-error { background: var(--cabai-tua); }
