@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{% if produk %}{{ produk.nama }} — {% endif %}{{ nama_toko }}{% endblock %}
+
+{% block content %}
+{% if produk %}
+<a href="/" class="kembali-link">← Kembali ke Menu</a>
+
+<div class="detail-produk">
+    <div class="detail-media">
+        {% if produk.gambar_url %}
+        <img src="{{ produk.gambar_url }}" alt="{{ produk.nama }}">
+        {% else %}
+        <div class="produk-placeholder detail-placeholder">🥣</div>
+        {% endif %}
+    </div>
+    <div class="detail-info">
+        <h1>{{ produk.nama }}</h1>
+        {% if produk.kategori %}<p class="detail-kategori">{{ produk.kategori }}</p>{% endif %}
+        <p class="detail-harga mono">Rp{{ "{:,.0f}".format(produk.harga).replace(",", ".") }}</p>
+
+        {% if produk.is_po %}
+        <span class="status-pill status-menunggu_pembayaran">Pre-Order</span>
+        {% elif produk.is_ready and produk.stok > 0 %}
+        <span class="status-pill status-dibayar">Ready — Stok {{ produk.stok }}</span>
+        {% else %}
+        <span class="status-pill status-batal">Stok Habis</span>
+        {% endif %}
+
+        <p class="detail-deskripsi">{{ produk.deskripsi or "Belum ada deskripsi untuk produk ini." }}</p>
+
+        <div class="detail-aksi">
+            <div class="stepper" id="detail-stepper">
+                <button type="button" onclick="ubahJumlahDetail(-1)">−</button>
+                <span id="detail-jumlah">1</span>
+                <button type="button" onclick="ubahJumlahDetail(1)">+</button>
+            </div>
+            <button onclick="tambahDetailKeKeranjang({{ produk.id }})" {% if produk.stok == 0 %}disabled{% endif %} class="detail-tombol">
+                {% if produk.stok == 0 %}Stok Habis{% else %}+ Tambah ke Keranjang{% endif %}
+            </button>
+        </div>
+    </div>
+</div>
+{% else %}
+<h1>Produk Tidak Ditemukan</h1>
+<p>Produk yang kamu cari mungkin sudah dihapus. <a href="/">Kembali ke menu</a>.</p>
+{% endif %}
+{% endblock %}
+
+{% block script %}
+{% if produk %}
+<script>
+let jumlahDipilih = 1;
+const stokMaks = {{ produk.stok }};
+
+function ubahJumlahDetail(delta) {
+    const baru = jumlahDipilih + delta;
+    if (baru < 1 || baru > stokMaks) return;
+    jumlahDipilih = baru;
+    document.getElementById("detail-jumlah").textContent = jumlahDipilih;
+}
+
+async function tambahDetailKeKeranjang(produkId) {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    const res = await fetch("/keranjang/items", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahDipilih }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        alert(err.detail || "Gagal menambahkan ke keranjang");
+        return;
+    }
+    updateCartBadge();
+    alert("Ditambahkan ke keranjang!");
+}
+</script>
+{% endif %}
+{% endblock %}
