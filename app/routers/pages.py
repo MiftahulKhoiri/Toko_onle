@@ -43,6 +43,13 @@ def keranjang_page(request: Request):
     )
 
 
+@router.get("/pesanan-saya")
+def pesanan_saya_page(request: Request):
+    return templates.TemplateResponse(
+        request, "pesanan_saya.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
 @router.get("/panel-admin")
 def admin_dashboard_page(request: Request):
     return templates.TemplateResponse(
