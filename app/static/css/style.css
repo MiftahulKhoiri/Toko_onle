@@ -45,6 +45,14 @@ a { color: inherit; }
 .container { max-width: 1000px; margin: 0 auto; padding: 2.5rem 1.2rem; }
 h1 { font-family: var(--font-display); color: var(--kuah); font-size: 2rem; margin-bottom: 1.5rem; letter-spacing: 0.01em; }
 
+.cari-produk {
+    display: block; width: 100%; max-width: 420px; padding: 0.65rem 1rem; margin-bottom: 1.5rem;
+    border: 1.5px solid #e3d7c0; border-radius: 999px; background: var(--santan);
+    font-family: var(--font-body); font-size: 0.92rem;
+}
+.cari-produk:focus { outline: none; border-color: var(--cabai); }
+.cari-kosong { color: #6b5a49; font-size: 0.9rem; margin-top: 0.5rem; }
+
 /* Grid produk */
 .produk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1.4rem; }
 .produk-card {
