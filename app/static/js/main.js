@@ -62,8 +62,9 @@ async function updateCartBadge() {
     }
 }
 
-// Notifikasi kecil di bawah layar, ganti pengganti alert() bawaan browser.
-// Panggil dari halaman mana pun: showToast("Pesan sukses") atau showToast("Pesan gagal", "error")
+// Notifikasi kecil di bawah layar dengan ikon — ganti alert() bawaan browser.
+// showToast("Pesan sukses") -> ikon centang hijau stabilo
+// showToast("Pesan gagal", "error") -> ikon silang merah
 function showToast(pesan, tipe = "sukses") {
     let container = document.getElementById("toast-container");
     if (!container) {
@@ -74,7 +75,16 @@ function showToast(pesan, tipe = "sukses") {
 
     const toast = document.createElement("div");
     toast.className = `toast toast-${tipe}`;
-    toast.textContent = pesan;
+
+    const ikon = document.createElement("span");
+    ikon.className = "toast-icon";
+    ikon.textContent = tipe === "error" ? "✕" : "✓";
+
+    const teks = document.createElement("span");
+    teks.textContent = pesan;
+
+    toast.appendChild(ikon);
+    toast.appendChild(teks);
     container.appendChild(toast);
 
     requestAnimationFrame(() => toast.classList.add("toast-show"));
