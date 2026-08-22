@@ -64,11 +64,18 @@ async function muatPesanan() {
 }
 
 async function updateStatus(orderId, statusBaru) {
-    await fetch(`/admin/pesanan/${orderId}/status`, {
+    const res = await fetch(`/admin/pesanan/${orderId}/status`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ status: statusBaru }),
     });
+
+    if (res.ok) {
+        showToast("Status pesanan berhasil diubah!");
+    } else {
+        showToast("Gagal mengubah status pesanan", "error");
+        muatPesanan();
+    }
 }
 
 (async () => {
