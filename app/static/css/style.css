@@ -66,16 +66,38 @@ h1 { font-family: var(--font-display); color: var(--kuah); font-size: 2rem; marg
 }
 .produk-card:hover .harga-stamp { transform: rotate(-1deg); }
 
-.produk-info { padding: 0.9rem 1rem 1.1rem; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
+.produk-link { color: inherit; text-decoration: none; display: flex; flex-direction: column; flex: 1; }
+.produk-info { padding: 0.9rem 1rem 0; display: flex; flex-direction: column; gap: 0.35rem; flex: 1; }
 .produk-info h3 { font-size: 1.05rem; }
 .produk-info .deskripsi { font-size: 0.85rem; color: #6b5a49; flex: 1; }
 .produk-info .stok { font-size: 0.78rem; color: var(--daun); font-weight: 600; }
+.produk-aksi { padding: 0.6rem 1rem 1.1rem; }
 
 button { font-family: var(--font-body); font-weight: 700; border: none; border-radius: 6px; cursor: pointer; transition: transform 0.1s ease, background 0.15s ease; }
-.produk-card button { margin-top: 0.5rem; width: 100%; padding: 0.55rem; background: var(--cabai); color: var(--santan); }
-.produk-card button:hover { background: var(--cabai-tua); }
-.produk-card button:active { transform: translateY(1px); }
-.produk-card button:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
+.produk-aksi button { width: 100%; padding: 0.55rem; background: var(--cabai); color: var(--santan); }
+.produk-aksi button:hover { background: var(--cabai-tua); }
+.produk-aksi button:active { transform: translateY(1px); }
+.produk-aksi button:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
+
+/* Halaman detail produk (/menu/{id}) */
+.kembali-link { display: inline-block; margin-bottom: 1rem; color: var(--kuah); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.kembali-link:hover { color: var(--cabai); }
+
+.detail-produk { background: var(--santan); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 14px rgba(43,29,20,0.12); }
+.detail-media { width: 100%; height: 260px; background: linear-gradient(160deg, #EADFC7, var(--kertas)); }
+.detail-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.detail-media .detail-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; }
+
+.detail-info { padding: 1.3rem 1.4rem 1.6rem; }
+.detail-info h1 { font-size: 1.5rem; margin-bottom: 0.2rem; }
+.detail-kategori { font-size: 0.8rem; color: var(--daun); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.5rem; }
+.detail-harga { font-size: 1.6rem; font-weight: 700; color: var(--cabai); margin: 0.4rem 0 0.6rem; }
+.detail-deskripsi { font-size: 0.92rem; color: #5c4d3d; line-height: 1.6; margin: 1rem 0 1.4rem; }
+
+.detail-aksi { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.detail-tombol { flex: 1; min-width: 180px; padding: 0.75rem; background: var(--cabai); color: var(--santan); }
+.detail-tombol:hover { background: var(--cabai-tua); }
+.detail-tombol:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
 
 /* Form login/register/admin/profil */
 .form-box { max-width: 380px; margin: 2rem auto; background: var(--santan); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 14px rgba(43,29,20,0.12); border-top: 5px solid var(--cabai); }
