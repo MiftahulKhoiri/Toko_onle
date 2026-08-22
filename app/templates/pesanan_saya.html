@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Pesanan Saya — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<h1>Pesanan Saya</h1>
+<div id="pesanan-isi">Memuat...</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const LABEL_STATUS = {
+    menunggu_pembayaran: "Menunggu Pembayaran",
+    dibayar: "Dibayar",
+    diproses: "Diproses",
+    selesai: "Selesai",
+    batal: "Dibatalkan",
+};
+
+function kelasStatus(status) {
+    return "status-pill status-" + status;
+}
+
+async function muatPesanan() {
+    const token = localStorage.getItem("access_token");
+    const container = document.getElementById("pesanan-isi");
+
+    if (!token) {
+        container.innerHTML = '<p>Silakan <a href="/login">login</a> dulu buat lihat pesanan.</p>';
+        return;
+    }
+
+    const res = await fetch("/pesanan/", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        container.innerHTML = "<p>Gagal memuat pesanan. Coba login ulang.</p>";
+        return;
+    }
+    const pesananList = await res.json();
+
+    if (!pesananList.length) {
+        container.innerHTML = '<p>Belum ada pesanan. <a href="/">Yuk mulai belanja</a>.</p>';
+        return;
+    }
+
+    let html = '<div class="pesanan-list">';
+    for (const p of pesananList) {
+        const tanggal = new Date(p.created_at).toLocaleString("id-ID", {
+            day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+        const labelStatus = LABEL_STATUS[p.status] || p.status;
+
+        let itemsHtml = "";
+        for (const item of p.items) {
+            const namaProduk = item.produk ? item.produk.nama : "-";
+            itemsHtml += `<li>${item.jumlah}x ${namaProduk} <span class="mono">Rp${(item.harga_saat_beli * item.jumlah).toLocaleString("id-ID")}</span></li>`;
+        }
+
+        html += `
+        <div class="pesanan-card">
+            <div class="pesanan-header">
+                <div>
+                    <strong>Pesanan #${p.id}</strong>
+                    <p class="pesanan-tanggal">${tanggal}</p>
+                </div>
+                <span class="${kelasStatus(p.status)}">${labelStatus}</span>
+            </div>
+            <ul class="pesanan-items">${itemsHtml}</ul>
+            <p class="pesanan-total mono">Total: Rp${p.total_harga.toLocaleString("id-ID")}</p>
+        </div>`;
+    }
+    html += "</div>";
+    container.innerHTML = html;
+}
+
+muatPesanan();
+</script>
+{% endblock %}
