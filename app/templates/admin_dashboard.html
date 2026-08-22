@@ -108,7 +108,6 @@
 <script>
 const token = localStorage.getItem("access_token");
 
-// Upload file foto, balikin gambar_url kalau ada file dipilih (null kalau kosong)
 async function uploadFoto(fileInputEl) {
     if (!fileInputEl.files || !fileInputEl.files[0]) return null;
     const formData = new FormData();
@@ -116,7 +115,7 @@ async function uploadFoto(fileInputEl) {
 
     const res = await fetch("/produk/upload-foto", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }, // JANGAN set Content-Type manual — browser yang atur boundary multipart-nya
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
     });
 
@@ -146,7 +145,6 @@ document.getElementById("edit-foto").addEventListener("change", (e) => {
     }
 });
 
-// Verifikasi hak akses admin
 async function cekAdmin() {
     const checkDiv = document.getElementById("admin-check");
     if (!token) {
@@ -167,7 +165,6 @@ async function cekAdmin() {
     return true;
 }
 
-// Memuat tabel daftar produk
 async function muatProduk() {
     const container = document.getElementById("daftar-produk");
     const res = await fetch("/produk/?limit=200");
@@ -214,7 +211,6 @@ async function muatProduk() {
     container.innerHTML = html;
 }
 
-// Fungsi Buka & Tutup Modal Edit
 function bukaEditModal(p) {
     document.getElementById("edit-id").value = p.id;
     document.getElementById("edit-nama").value = p.nama;
@@ -242,7 +238,6 @@ function tutupEditModal() {
     document.getElementById("edit-modal").style.display = "none";
 }
 
-// Menyimpan Perubahan Edit Produk
 async function simpanEditProduk() {
     const id = document.getElementById("edit-id").value;
 
@@ -251,7 +246,7 @@ async function simpanEditProduk() {
         const hasilUpload = await uploadFoto(document.getElementById("edit-foto"));
         if (hasilUpload) gambarUrl = hasilUpload;
     } catch (err) {
-        alert(err.message);
+        showToast(err.message, "error");
         return;
     }
 
@@ -273,25 +268,28 @@ async function simpanEditProduk() {
     });
 
     if (res.ok) {
-        alert("Produk berhasil diperbarui!");
+        showToast("Produk berhasil diperbarui!");
         tutupEditModal();
         muatProduk();
     } else {
-        alert("Gagal memperbarui produk");
+        showToast("Gagal memperbarui produk", "error");
     }
 }
 
-// Fungsi Hapus Produk
 async function hapusProduk(produkId) {
     if (!confirm("Apakah Anda yakin ingin menghapus produk ini?")) return;
-    await fetch(`/produk/${produkId}`, {
+    const res = await fetch(`/produk/${produkId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
     });
+    if (res.ok) {
+        showToast("Produk berhasil dihapus!");
+    } else {
+        showToast("Gagal menghapus produk", "error");
+    }
     muatProduk();
 }
 
-// Submit Form Tambah Produk Baru
 document.getElementById("tambah-produk-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const msg = document.getElementById("form-msg");
@@ -329,13 +327,13 @@ document.getElementById("tambah-produk-form").addEventListener("submit", async (
         return;
     }
 
+    showToast("Produk berhasil ditambahkan!");
     document.getElementById("tambah-produk-form").reset();
     document.getElementById("p-ready").checked = true;
     document.getElementById("p-foto-preview").style.display = "none";
     muatProduk();
 });
 
-// Inisialisasi awal
 (async () => {
     if (await cekAdmin()) muatProduk();
 })();
