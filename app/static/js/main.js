@@ -62,6 +62,29 @@ async function updateCartBadge() {
     }
 }
 
+// Notifikasi kecil di bawah layar, ganti pengganti alert() bawaan browser.
+// Panggil dari halaman mana pun: showToast("Pesan sukses") atau showToast("Pesan gagal", "error")
+function showToast(pesan, tipe = "sukses") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "toast-container";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${tipe}`;
+    toast.textContent = pesan;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add("toast-show"));
+
+    setTimeout(() => {
+        toast.classList.remove("toast-show");
+        setTimeout(() => toast.remove(), 300);
+    }, 2800);
+}
+
 function logout() {
     localStorage.removeItem("access_token");
     window.location.href = "/";
@@ -82,11 +105,11 @@ async function tambahKeKeranjang(produkId) {
 
     if (!res.ok) {
         const err = await res.json();
-        alert(err.detail || "Gagal menambahkan ke keranjang");
+        showToast(err.detail || "Gagal menambahkan ke keranjang", "error");
         return;
     }
     updateCartBadge();
-    alert("Ditambahkan ke keranjang!");
+    showToast("Ditambahkan ke keranjang!");
 }
 
 renderNavAuth();
