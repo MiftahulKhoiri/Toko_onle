@@ -118,6 +118,22 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .total { font-family: var(--font-mono); font-size: 1.3rem; font-weight: 700; color: var(--kuah); margin: 1.2rem 0; text-align: right; }
 #keranjang-isi > button { background: var(--cabai); color: var(--santan); padding: 0.7rem 1.4rem; display: block; margin-left: auto; }
 
+/* Kartu Pesanan Saya (dipakai halaman /pesanan-saya) */
+.pesanan-list { display: flex; flex-direction: column; gap: 1rem; }
+.pesanan-card { background: var(--santan); border-radius: 10px; padding: 1rem 1.1rem; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.pesanan-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.8rem; margin-bottom: 0.6rem; }
+.pesanan-tanggal { font-size: 0.8rem; color: #6b5a49; margin-top: 0.15rem; }
+.pesanan-items { list-style: none; border-top: 1px dashed #e3d7c0; border-bottom: 1px dashed #e3d7c0; padding: 0.6rem 0; margin: 0.4rem 0; }
+.pesanan-items li { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.15rem 0; }
+.pesanan-total { text-align: right; font-weight: 700; color: var(--kuah); }
+
+.status-pill { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; white-space: nowrap; }
+.status-menunggu_pembayaran { background: #f0e4c8; color: #7a5c1e; }
+.status-dibayar { background: #e3ecd9; color: var(--daun); }
+.status-diproses { background: #f3e2d2; color: var(--kuah); }
+.status-selesai { background: var(--daun); color: var(--santan); }
+.status-batal { background: #fbe0dc; color: var(--cabai-tua); }
+
 /* Tabel dipakai panel admin (kelola produk & pesanan) — TIDAK berubah */
 .keranjang-table { width: 100%; border-collapse: collapse; background: var(--santan); border-radius: 10px; overflow: hidden; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
 .keranjang-table th { background: var(--kuah); color: var(--santan); text-align: left; padding: 0.7rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; }
