@@ -11,6 +11,10 @@
 <script>
 const token = localStorage.getItem("access_token");
 const STATUS_OPSI = ["menunggu_pembayaran", "dibayar", "diproses", "selesai", "batal"];
+const LABEL_PENGIRIMAN = {
+    diantar: "🛵 Diantar",
+    ambil_sendiri: "🏪 Ambil Sendiri",
+};
 
 async function cekAdmin() {
     const checkDiv = document.getElementById("admin-check");
@@ -42,14 +46,29 @@ async function muatPesanan() {
         return;
     }
 
-    let html = '<table class="keranjang-table"><tr><th>ID</th><th>Pembeli</th><th>Total</th><th>Status</th><th>Tanggal</th></tr>';
+    let html = '<table class="keranjang-table"><tr><th>ID</th><th>Pembeli</th><th>Item</th><th>Pengiriman</th><th>Total</th><th>Status</th><th>Tanggal</th></tr>';
     for (const o of pesananList) {
         const opsiHtml = STATUS_OPSI.map(
             (s) => `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`
         ).join("");
+
+        const itemHtml = o.items.map((item) => {
+            const namaProduk = item.produk ? item.produk.nama : "-";
+            const catatanHtml = item.catatan ? ` <span class="item-catatan">📝 ${item.catatan}</span>` : "";
+            return `${item.jumlah}x ${namaProduk}${catatanHtml}`;
+        }).join("<br>");
+
+        const labelPengiriman = LABEL_PENGIRIMAN[o.metode_pengiriman] || o.metode_pengiriman;
+        const ongkirHtml = o.ongkir > 0 ? `<br><small class="mono">+Rp${o.ongkir.toLocaleString("id-ID")}</small>` : "";
+        const alamatHtml = (o.metode_pengiriman === "diantar" && o.alamat)
+            ? `<br><small>${[o.alamat.alamat_jalan, o.alamat.kelurahan, o.alamat.kecamatan, o.alamat.kota].filter(Boolean).join(", ")}</small>`
+            : "";
+
         html += `<tr>
             <td>#${o.id}</td>
             <td>${o.user ? o.user.nama : "-"}</td>
+            <td>${itemHtml}</td>
+            <td>${labelPengiriman}${ongkirHtml}${alamatHtml}</td>
             <td>Rp${o.total_harga.toLocaleString("id-ID")}</td>
             <td><select data-order-id="${o.id}" class="status-select">${opsiHtml}</select></td>
             <td>${new Date(o.created_at).toLocaleString("id-ID")}</td>
