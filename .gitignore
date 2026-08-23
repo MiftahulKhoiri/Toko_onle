@@ -1,0 +1,25 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment & secrets
+.env
+
+# Database
+toko.db
+*.db
+
+# Foto produk hasil upload (dibuat otomatis, nggak perlu ikut di-commit)
+app/static/img/produk/
+
+# OS/editor
+.DS_Store
+*.swp
+.vscode/
+.idea/
