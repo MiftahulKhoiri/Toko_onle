@@ -150,10 +150,17 @@ async function hapusItem(itemId) {
 }
 
 async function checkout() {
+    if (CART_CACHE && CART_CACHE.metode_pengiriman === "diantar") {
+        window.location.href = "/checkout/alamat";
+        return;
+    }
+
+    // Ambil Sendiri: nggak butuh alamat, langsung checkout
     const token = localStorage.getItem("access_token");
     const res = await fetch("/payment/checkout", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ alamat_id: null }),
     });
     if (!res.ok) {
         const err = await res.json();
