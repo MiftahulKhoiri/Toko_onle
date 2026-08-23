@@ -7,9 +7,15 @@
     <!-- ===== TAMPILAN PROFIL (default) ===== -->
     <div id="tampilan-profil">
         <div class="profil-avatar-wrap">
-            <div id="profil-avatar" class="profil-avatar">?</div>
+            <label for="input-foto-profil" class="profil-avatar-label">
+                <div id="profil-avatar" class="profil-avatar">?</div>
+                <span class="profil-avatar-edit">📷</span>
+            </label>
+            <input type="file" id="input-foto-profil" accept="image/png, image/jpeg, image/webp" style="display:none;">
+
             <h1 id="view-nama">Memuat...</h1>
             <p id="view-email" class="profil-email">-</p>
+            <button type="button" id="btn-hapus-foto" onclick="hapusFotoProfil()" class="profil-hapus-foto">Hapus Foto</button>
         </div>
 
         <div class="profil-info-list">
@@ -100,6 +106,77 @@ function tampilkanView() {
     document.getElementById("tampilan-profil").style.display = "block";
 }
 
+function resizeGambarKeSquare(file, ukuran = 400) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e) => { img.src = e.target.result; };
+        reader.onerror = reject;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = ukuran;
+            canvas.height = ukuran;
+            const ctx = canvas.getContext("2d");
+
+            // crop tengah jadi persegi dulu, baru resize ke ukuran target
+            const sisi = Math.min(img.width, img.height);
+            const sx = (img.width - sisi) / 2;
+            const sy = (img.height - sisi) / 2;
+            ctx.drawImage(img, sx, sy, sisi, sisi, 0, 0, ukuran, ukuran);
+
+            canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.85);
+        };
+        img.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+document.getElementById("input-foto-profil").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        showToast("Format foto harus jpg, png, atau webp", "error");
+        return;
+    }
+
+    try {
+        const blob = await resizeGambarKeSquare(file, 400);
+        const formData = new FormData();
+        formData.append("file", blob, "foto-profil.jpg");
+
+        const res = await fetch("/auth/me/foto", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            showToast(err.detail || "Gagal upload foto", "error");
+            return;
+        }
+
+        showToast("Foto profil berhasil diperbarui!");
+        await loadProfil();
+        if (typeof renderNavAuth === "function") renderNavAuth();
+    } catch (err) {
+        showToast("Gagal memproses foto", "error");
+    }
+
+    e.target.value = "";
+});
+
+async function hapusFotoProfil() {
+    if (!confirm("Hapus foto profil?")) return;
+    await fetch("/auth/me/foto", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    await loadProfil();
+    if (typeof renderNavAuth === "function") renderNavAuth();
+}
+
 async function loadProfil() {
     if (!token) {
         window.location.href = "/login";
@@ -122,7 +199,18 @@ async function loadProfil() {
         document.getElementById("view-nama").textContent = user.nama || "-";
         document.getElementById("view-email").textContent = user.email || "-";
         document.getElementById("view-telepon").textContent = user.telepon || "Belum diisi";
-        document.getElementById("profil-avatar").textContent = (user.nama || "?").trim().charAt(0).toUpperCase();
+
+        const avatarEl = document.getElementById("profil-avatar");
+        const btnHapusFoto = document.getElementById("btn-hapus-foto");
+        if (user.foto_url) {
+            avatarEl.innerHTML = `<img src="${user.foto_url}" alt="Foto profil">`;
+            avatarEl.classList.add("profil-avatar-ada-foto");
+            btnHapusFoto.style.display = "inline-block";
+        } else {
+            avatarEl.textContent = (user.nama || "?").trim().charAt(0).toUpperCase();
+            avatarEl.classList.remove("profil-avatar-ada-foto");
+            btnHapusFoto.style.display = "none";
+        }
 
         const komponenAlamat = [
             user.alamat_jalan,
