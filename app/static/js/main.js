@@ -18,11 +18,15 @@ async function renderNavAuth() {
         }
         const user = await res.json();
 
+        const avatarHtml = user.foto_url
+            ? `<img src="${user.foto_url}" class="nav-avatar" alt="">`
+            : `<span class="nav-avatar-default">👤</span>`;
+
         let html = "";
         if (user.is_admin) {
             html += '<a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a> ';
         }
-        html += `<a href="/profil" class="nav-profil">👤 ${user.nama}`;
+        html += `<a href="/profil" class="nav-profil">${avatarHtml} ${user.nama}`;
         if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
         html += "</a>";
 
