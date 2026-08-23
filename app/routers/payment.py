@@ -45,20 +45,30 @@ def checkout(db: Session = Depends(get_db), current_user: models.User = Depends(
     cart = _get_pending_cart(db, current_user)
 
     order_id = f"cakyud-{cart.id}-{secrets.token_hex(4)}"
-    gross_amount = int(sum(item.harga_saat_beli * item.jumlah for item in cart.items))
+    ongkir = int(cart.ongkir or 0)
+    gross_amount = int(sum(item.harga_saat_beli * item.jumlah for item in cart.items)) + ongkir
+
+    item_details = [
+        {
+            "id": str(item.produk_id),
+            "price": int(item.harga_saat_beli),
+            "quantity": item.jumlah,
+            "name": item.produk.nama[:50],
+        }
+        for item in cart.items
+    ]
+    if ongkir > 0:
+        item_details.append({
+            "id": "ongkir",
+            "price": ongkir,
+            "quantity": 1,
+            "name": f"Ongkos Kirim ({cart.metode_pengiriman})",
+        })
 
     param = {
         "transaction_details": {"order_id": order_id, "gross_amount": gross_amount},
         "customer_details": {"first_name": current_user.nama, "email": current_user.email},
-        "item_details": [
-            {
-                "id": str(item.produk_id),
-                "price": int(item.harga_saat_beli),
-                "quantity": item.jumlah,
-                "name": item.produk.nama[:50],
-            }
-            for item in cart.items
-        ],
+        "item_details": item_details,
     }
 
     transaction = snap.create_transaction(param)
