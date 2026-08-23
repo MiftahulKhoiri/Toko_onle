@@ -87,4 +87,4 @@ def setup_admin():
 if __name__ == "__main__":
     setup_env()
     setup_admin()
-    print("=== Selesai. Jalankan: uvicorn app.main:app --reload ===")
+    print("=== Selesai. Jalankan ulangserver: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 ")
