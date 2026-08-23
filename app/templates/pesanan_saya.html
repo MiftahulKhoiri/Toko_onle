@@ -53,6 +53,9 @@ async function muatPesanan() {
         });
         const labelStatus = LABEL_STATUS[p.status] || p.status;
         const labelPengiriman = LABEL_PENGIRIMAN[p.metode_pengiriman] || p.metode_pengiriman;
+        const alamatHtml = (p.metode_pengiriman === "diantar" && p.alamat)
+            ? ` — ${[p.alamat.alamat_jalan, p.alamat.kelurahan, p.alamat.kecamatan, p.alamat.kota].filter(Boolean).join(", ")}`
+            : "";
 
         let itemsHtml = "";
         for (const item of p.items) {
@@ -66,7 +69,7 @@ async function muatPesanan() {
             <div class="pesanan-header">
                 <div>
                     <strong>Pesanan #${p.id}</strong>
-                    <p class="pesanan-tanggal">${tanggal} · ${labelPengiriman}</p>
+                    <p class="pesanan-tanggal">${tanggal} · ${labelPengiriman}${alamatHtml}</p>
                 </div>
                 <span class="${kelasStatus(p.status)}">${labelStatus}</span>
             </div>
