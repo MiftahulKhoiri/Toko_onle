@@ -1,5 +1,9 @@
 # app/routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+import os
+import uuid
+from typing import Optional
+
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -13,6 +17,23 @@ router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
+
+UPLOAD_DIR_FOTO = "app/static/img/profil"
+EKSTENSI_DIIZINKAN_FOTO = {".jpg", ".jpeg", ".png", ".webp"}
+UKURAN_MAKS_FOTO = 3 * 1024 * 1024  # 3MB — sudah di-resize di browser sebelum diunggah
+
+os.makedirs(UPLOAD_DIR_FOTO, exist_ok=True)
+
+
+def _hapus_foto_lama(foto_url: Optional[str]) -> None:
+    if not foto_url or not foto_url.startswith("/static/img/profil/"):
+        return
+    path_file = os.path.join(UPLOAD_DIR_FOTO, os.path.basename(foto_url))
+    if os.path.isfile(path_file):
+        try:
+            os.remove(path_file)
+        except OSError:
+            pass
 
 
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
@@ -63,21 +84,60 @@ def read_current_user(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
-# ---------- Endpoint Update Profil ----------
 @router.put("/me", response_model=schemas.UserResponse)
 def update_profile(
     user_data: schemas.UserUpdate,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """
-    Endpoint untuk memperbarui data profil & alamat lengkap user
-    """
-    # Hanya memperbarui field yang dikirim dari frontend (bukan None)
     update_data = user_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(current_user, field, value)
 
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/foto", response_model=schemas.UserResponse)
+async def upload_foto_profil(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    ekstensi = os.path.splitext(file.filename or "")[1].lower()
+    if ekstensi not in EKSTENSI_DIIZINKAN_FOTO:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format foto harus jpg, jpeg, png, atau webp",
+        )
+
+    isi_file = await file.read()
+    if len(isi_file) > UKURAN_MAKS_FOTO:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 3MB")
+
+    foto_lama = current_user.foto_url
+
+    nama_file = f"user{current_user.id}-{uuid.uuid4().hex}{ekstensi}"
+    with open(os.path.join(UPLOAD_DIR_FOTO, nama_file), "wb") as f:
+        f.write(isi_file)
+
+    current_user.foto_url = f"/static/img/profil/{nama_file}"
+    db.commit()
+    db.refresh(current_user)
+
+    _hapus_foto_lama(foto_lama)  # hapus foto lama SETELAH foto baru tersimpan, biar cuma nyimpen 1
+
+    return current_user
+
+
+@router.delete("/me/foto", response_model=schemas.UserResponse)
+def hapus_foto_profil(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    _hapus_foto_lama(current_user.foto_url)
+    current_user.foto_url = None
     db.commit()
     db.refresh(current_user)
     return current_user
