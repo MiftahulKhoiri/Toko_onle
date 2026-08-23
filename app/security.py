@@ -9,7 +9,14 @@ from passlib.context import CryptContext
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "ganti-ini-di-file-.env-jangan-dipakai-di-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError(
+        "SECRET_KEY belum diisi di file .env — wajib diisi sebelum server dijalankan.\n"
+        'Generate key acak dengan: python -c "import secrets; print(secrets.token_hex(32))"\n'
+        "Lalu tempel hasilnya ke .env, format: SECRET_KEY=hasil_generate_tadi"
+    )
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # token berlaku 1 hari
 
