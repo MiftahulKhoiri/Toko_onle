@@ -10,7 +10,6 @@ from app.database import get_db
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 
-# Deklarasi variabel NAMA_TOKO secara global agar konsisten
 NAMA_TOKO = "Salome Cakyud"
 
 
@@ -48,6 +47,13 @@ def register_page(request: Request):
 def keranjang_page(request: Request):
     return templates.TemplateResponse(
         request, "keranjang.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
+@router.get("/checkout/alamat")
+def checkout_alamat_page(request: Request):
+    return templates.TemplateResponse(
+        request, "checkout_alamat.html", {"nama_toko": NAMA_TOKO}
     )
 
 
