@@ -54,6 +54,11 @@ class Order(Base):
     status = Column(String(20), default="pending")
     payment_method = Column(String(50), nullable=True)
     midtrans_order_id = Column(String(100), unique=True, nullable=True, index=True)
+
+    # --- PENGIRIMAN ---
+    metode_pengiriman = Column(String(20), default="diantar")  # "diantar" atau "ambil_sendiri"
+    ongkir = Column(Float, default=0)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="orders")
@@ -68,6 +73,7 @@ class OrderItem(Base):
     produk_id = Column(Integer, ForeignKey("produk.id"), nullable=False)
     jumlah = Column(Integer, nullable=False, default=1)
     harga_saat_beli = Column(Float, nullable=False)
+    catatan = Column(String(255), nullable=True)  # mis: "tanpa bawang", "pedas"
 
     order = relationship("Order", back_populates="items")
     produk = relationship("Produk", back_populates="order_items")
