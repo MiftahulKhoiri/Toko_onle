@@ -156,6 +156,7 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .pesanan-items { list-style: none; border-top: 1px dashed #e3d7c0; border-bottom: 1px dashed #e3d7c0; padding: 0.6rem 0; margin: 0.4rem 0; }
 .pesanan-items li { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 0.15rem 0; }
 .pesanan-total { text-align: right; font-weight: 700; color: var(--kuah); }
+.pesanan-ongkir { text-align: right; font-size: 0.82rem; color: #6b5a49; }
 
 .status-pill { font-size: 0.72rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px; white-space: nowrap; }
 .status-menunggu_pembayaran { background: #f0e4c8; color: #7a5c1e; }
@@ -203,3 +204,27 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 }
 .toast-sukses .toast-icon { background: #CFFF04; color: var(--arang); }
 .toast-error .toast-icon { background: var(--cabai); color: var(--santan); }
+
+/* Pilihan metode pengiriman (dipakai halaman /keranjang-saya) */
+.pengiriman-pilih { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1.2rem; }
+.pengiriman-opsi {
+    display: flex; align-items: center; gap: 0.5rem; background: var(--santan);
+    border: 1.5px solid #e3d7c0; border-radius: 8px; padding: 0.6rem 0.9rem;
+    font-size: 0.88rem; font-weight: 600; cursor: pointer; flex: 1; min-width: 160px;
+}
+.pengiriman-opsi:has(input:checked) { border-color: var(--cabai); background: #fdf3ee; }
+.pengiriman-opsi input { accent-color: var(--cabai); }
+
+/* Catatan per item keranjang */
+.catatan-input {
+    width: 100%; margin-top: 0.6rem; padding: 0.45rem 0.6rem;
+    border: 1.5px dashed #e3d7c0; border-radius: 6px; background: var(--kertas);
+    font-family: var(--font-body); font-size: 0.82rem;
+}
+.catatan-input:focus { outline: none; border-color: var(--cabai); border-style: solid; }
+.item-catatan { color: var(--daun); font-style: italic; }
+
+/* Ringkasan total (subtotal/ongkir/total) di keranjang */
+.ringkasan-total { margin: 1.2rem 0; padding-top: 0.8rem; border-top: 1px dashed #e3d7c0; }
+.ringkasan-total p { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.2rem 0; color: #6b5a49; }
+.ringkasan-total p.total { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--kuah); margin-top: 0.3rem; }
