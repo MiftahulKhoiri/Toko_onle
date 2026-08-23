@@ -12,8 +12,8 @@ class ProdukBase(BaseModel):
     stok: int = 0
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
-    is_ready: bool = True     # Status Ready (Default: True)
-    is_po: bool = False       # Status Pre-Order (Default: False)
+    is_ready: bool = True
+    is_po: bool = False
 
 
 class ProdukCreate(ProdukBase):
@@ -27,8 +27,8 @@ class ProdukUpdate(BaseModel):
     stok: Optional[int] = None
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
-    is_ready: Optional[bool] = None  # Bisa diupdate lewat admin
-    is_po: Optional[bool] = None     # Bisa diupdate lewat admin
+    is_ready: Optional[bool] = None
+    is_po: Optional[bool] = None
 
 
 class ProdukResponse(ProdukBase):
@@ -43,8 +43,6 @@ class UserBase(BaseModel):
     nama: str
     email: EmailStr
     telepon: Optional[str] = None
-
-    # --- RINCIAN ALAMAT TERPISAH ---
     alamat_jalan: Optional[str] = None
     kelurahan: Optional[str] = None
     kecamatan: Optional[str] = None
@@ -86,11 +84,36 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 
+# ---------- Alamat ----------
+class AlamatCreate(BaseModel):
+    label: Optional[str] = "Rumah"
+    alamat_jalan: str
+    kelurahan: Optional[str] = None
+    kecamatan: Optional[str] = None
+    kota: str
+    provinsi: Optional[str] = None
+    kode_pos: Optional[str] = None
+
+
+class AlamatResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    alamat_jalan: Optional[str] = None
+    kelurahan: Optional[str] = None
+    kecamatan: Optional[str] = None
+    kota: Optional[str] = None
+    provinsi: Optional[str] = None
+    kode_pos: Optional[str] = None
+    is_default: bool
+
+
 # ---------- OrderItem ----------
 class OrderItemCreate(BaseModel):
     produk_id: int
     jumlah: int = 1
-    catatan: Optional[str] = None  # mis: "tanpa bawang", "pedas"
+    catatan: Optional[str] = None
 
 
 class OrderItemResponse(BaseModel):
@@ -106,7 +129,12 @@ class OrderItemResponse(BaseModel):
 
 # ---------- Pengiriman ----------
 class PengirimanUpdate(BaseModel):
-    metode_pengiriman: str  # "diantar" atau "ambil_sendiri"
+    metode_pengiriman: str
+
+
+# ---------- Checkout ----------
+class CheckoutRequest(BaseModel):
+    alamat_id: Optional[int] = None
 
 
 # ---------- Order ----------
@@ -116,7 +144,7 @@ class OrderCreate(BaseModel):
 
 
 class OrderStatusUpdate(BaseModel):
-    status: str  # menunggu_pembayaran, dibayar, diproses, selesai, batal
+    status: str
 
 
 class OrderResponse(BaseModel):
@@ -132,3 +160,4 @@ class OrderResponse(BaseModel):
     created_at: datetime
     items: List[OrderItemResponse] = []
     user: Optional[UserResponse] = None
+    alamat: Optional[AlamatResponse] = None
