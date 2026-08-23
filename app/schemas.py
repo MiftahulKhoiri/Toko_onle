@@ -90,6 +90,7 @@ class TokenData(BaseModel):
 class OrderItemCreate(BaseModel):
     produk_id: int
     jumlah: int = 1
+    catatan: Optional[str] = None  # mis: "tanpa bawang", "pedas"
 
 
 class OrderItemResponse(BaseModel):
@@ -99,7 +100,13 @@ class OrderItemResponse(BaseModel):
     produk_id: int
     jumlah: int
     harga_saat_beli: float
+    catatan: Optional[str] = None
     produk: Optional[ProdukResponse] = None
+
+
+# ---------- Pengiriman ----------
+class PengirimanUpdate(BaseModel):
+    metode_pengiriman: str  # "diantar" atau "ambil_sendiri"
 
 
 # ---------- Order ----------
@@ -120,6 +127,8 @@ class OrderResponse(BaseModel):
     total_harga: float
     status: str
     payment_method: Optional[str] = None
+    metode_pengiriman: str = "diantar"
+    ongkir: float = 0
     created_at: datetime
     items: List[OrderItemResponse] = []
     user: Optional[UserResponse] = None
