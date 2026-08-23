@@ -11,6 +11,8 @@ router = APIRouter(
     tags=["keranjang"],
 )
 
+ONGKIR_DIANTAR = 15000  # ongkir flat rate — ubah manual di sini kalau perlu
+
 
 def _get_or_create_cart(db: Session, user: models.User) -> models.Order:
     cart = (
@@ -19,7 +21,13 @@ def _get_or_create_cart(db: Session, user: models.User) -> models.Order:
         .first()
     )
     if not cart:
-        cart = models.Order(user_id=user.id, total_harga=0, status="pending")
+        cart = models.Order(
+            user_id=user.id,
+            total_harga=0,
+            status="pending",
+            metode_pengiriman="diantar",
+            ongkir=ONGKIR_DIANTAR,
+        )
         db.add(cart)
         db.commit()
         db.refresh(cart)
@@ -27,8 +35,8 @@ def _get_or_create_cart(db: Session, user: models.User) -> models.Order:
 
 
 def _recalc_total(db: Session, cart: models.Order) -> None:
-    total = sum(item.jumlah * item.harga_saat_beli for item in cart.items)
-    cart.total_harga = total
+    subtotal = sum(item.jumlah * item.harga_saat_beli for item in cart.items)
+    cart.total_harga = subtotal + cart.ongkir
     db.commit()
     db.refresh(cart)
 
@@ -39,6 +47,26 @@ def lihat_keranjang(
     current_user: models.User = Depends(get_current_user),
 ):
     return _get_or_create_cart(db, current_user)
+
+
+@router.put("/pengiriman", response_model=schemas.OrderResponse)
+def ubah_metode_pengiriman(
+    data: schemas.PengirimanUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if data.metode_pengiriman not in ("diantar", "ambil_sendiri"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Metode pengiriman harus 'diantar' atau 'ambil_sendiri'",
+        )
+
+    cart = _get_or_create_cart(db, current_user)
+    cart.metode_pengiriman = data.metode_pengiriman
+    cart.ongkir = ONGKIR_DIANTAR if data.metode_pengiriman == "diantar" else 0
+    db.commit()
+    _recalc_total(db, cart)
+    return cart
 
 
 @router.post("/items", response_model=schemas.OrderResponse, status_code=status.HTTP_201_CREATED)
@@ -64,12 +92,15 @@ def tambah_item(
 
     if existing_item:
         existing_item.jumlah = jumlah_baru
+        if item.catatan is not None:
+            existing_item.catatan = item.catatan
     else:
         existing_item = models.OrderItem(
             order_id=cart.id,
             produk_id=produk.id,
             jumlah=item.jumlah,
             harga_saat_beli=produk.harga,
+            catatan=item.catatan,
         )
         db.add(existing_item)
 
@@ -101,6 +132,8 @@ def update_item(
         db.delete(db_item)
     else:
         db_item.jumlah = item.jumlah
+        if item.catatan is not None:
+            db_item.catatan = item.catatan
 
     db.commit()
     _recalc_total(db, cart)
