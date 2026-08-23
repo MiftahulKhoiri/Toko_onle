@@ -7,7 +7,7 @@ import midtransclient
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from app import models
+from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
 
@@ -33,14 +33,12 @@ def _get_pending_cart(db: Session, user: models.User) -> models.Order:
 
 
 def _mark_as_paid(db: Session, order: models.Order) -> None:
-    # Stok sudah dikurangi (direservasi) saat checkout, jadi di sini cuma ubah status.
     if order.status not in ("dibayar", "selesai"):
         order.status = "dibayar"
         db.commit()
 
 
 def _mark_as_cancelled(db: Session, order: models.Order) -> None:
-    # Kembalikan stok yang sempat direservasi saat checkout, kecuali order sudah lunas.
     if order.status not in ("batal", "dibayar", "selesai"):
         for item in order.items:
             item.produk.stok += item.jumlah
@@ -49,10 +47,30 @@ def _mark_as_cancelled(db: Session, order: models.Order) -> None:
 
 
 @router.post("/checkout")
-def checkout(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+def checkout(
+    data: schemas.CheckoutRequest,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
     cart = _get_pending_cart(db, current_user)
 
-    # Validasi ulang stok — bisa saja berubah sejak item ditambahkan ke keranjang
+    if cart.metode_pengiriman == "diantar":
+        if not data.alamat_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Alamat pengiriman belum dipilih",
+            )
+        alamat = (
+            db.query(models.Alamat)
+            .filter(models.Alamat.id == data.alamat_id, models.Alamat.user_id == current_user.id)
+            .first()
+        )
+        if not alamat:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alamat tidak ditemukan")
+        cart.alamat_id = alamat.id
+    else:
+        cart.alamat_id = None
+
     for item in cart.items:
         if item.jumlah > item.produk.stok:
             raise HTTPException(
@@ -89,8 +107,6 @@ def checkout(db: Session = Depends(get_db), current_user: models.User = Depends(
 
     transaction = snap.create_transaction(param)
 
-    # Reservasi stok sekarang juga (bukan pas pembayaran dikonfirmasi) — biar nggak
-    # kejadian 2 orang checkout barang terakhir bersamaan dan stok jadi minus.
     for item in cart.items:
         item.produk.stok -= item.jumlah
 
