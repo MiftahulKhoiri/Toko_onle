@@ -14,7 +14,8 @@ _percobaan = defaultdict(list)
 def batasi_percobaan(key: str, maks: int = 5, jendela_detik: int = 300) -> None:
     """
     Batasi jumlah percobaan per `key` (mis. gabungan IP + endpoint) dalam
-    jendela waktu tertentu. Lempar HTTP 429 kalau sudah melewati batas.
+    jendela waktu tertentu. Lempar HTTP 429 (dengan header Retry-After
+    berisi sisa detik) kalau sudah melewati batas.
     """
     sekarang = time.time()
     waktu_list = _percobaan[key]
@@ -23,9 +24,12 @@ def batasi_percobaan(key: str, maks: int = 5, jendela_detik: int = 300) -> None:
     waktu_list[:] = [t for t in waktu_list if sekarang - t < jendela_detik]
 
     if len(waktu_list) >= maks:
+        waktu_tertua = waktu_list[0]
+        sisa_detik = max(1, int(jendela_detik - (sekarang - waktu_tertua)) + 1)
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Terlalu banyak percobaan, coba lagi beberapa menit lagi.",
+            detail=f"Terlalu banyak percobaan. Coba lagi dalam {sisa_detik} detik.",
+            headers={"Retry-After": str(sisa_detik)},
         )
 
     waktu_list.append(sekarang)
