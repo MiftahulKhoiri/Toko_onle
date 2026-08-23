@@ -229,3 +229,28 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .ringkasan-total { margin: 1.2rem 0; padding-top: 0.8rem; border-top: 1px dashed #e3d7c0; }
 .ringkasan-total p { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.2rem 0; color: #6b5a49; }
 .ringkasan-total p.total { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 700; color: var(--kuah); margin-top: 0.3rem; }
+
+/* Halaman pilih/tambah alamat (/checkout/alamat) */
+.alamat-list { display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1rem; }
+.alamat-card {
+    display: flex; gap: 0.7rem; background: var(--santan); border: 1.5px solid #e3d7c0;
+    border-radius: 10px; padding: 0.9rem; cursor: pointer;
+}
+.alamat-card-terpilih { border-color: var(--cabai); background: #fdf3ee; }
+.alamat-card input[type="radio"] { margin-top: 0.2rem; accent-color: var(--cabai); flex-shrink: 0; }
+.alamat-card-isi { flex: 1; }
+.alamat-card-atas { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
+.alamat-card-atas strong { font-size: 0.98rem; }
+.badge-utama { background: var(--daun); color: var(--santan); font-size: 0.65rem; font-weight: 700; padding: 0.1rem 0.5rem; border-radius: 999px; }
+.alamat-card-isi p { font-size: 0.85rem; color: #6b5a49; line-height: 1.5; }
+.alamat-card-aksi { display: flex; gap: 0.8rem; margin-top: 0.5rem; }
+.alamat-card-aksi button {
+    background: transparent; border: none; color: var(--kuah); font-size: 0.78rem;
+    font-weight: 600; text-decoration: underline; padding: 0; cursor: pointer;
+}
+.alamat-hapus { color: var(--cabai-tua) !important; }
+.alamat-tambah-toggle {
+    width: 100%; background: transparent; border: 1.5px dashed #e3d7c0; color: var(--kuah);
+    padding: 0.6rem; border-radius: 8px; font-size: 0.9rem;
+}
+.alamat-tambah-toggle:hover { border-color: var(--cabai); color: var(--cabai); }
