@@ -1,11 +1,12 @@
 # app/routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.rate_limit import batasi_percobaan
 from app.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(
@@ -15,7 +16,9 @@ router = APIRouter(
 
 
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
+    batasi_percobaan(f"register:{request.client.host}", maks=5, jendela_detik=600)
+
     existing = db.query(models.User).filter(models.User.email == user.email).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email sudah terdaftar")
@@ -39,7 +42,9 @@ def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    batasi_percobaan(f"login:{request.client.host}", maks=5, jendela_detik=300)
+
     user = db.query(models.User).filter(models.User.email == form_data.username).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
