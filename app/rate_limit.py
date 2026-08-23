@@ -11,7 +11,7 @@ from fastapi import HTTPException, status
 _percobaan = defaultdict(list)
 
 
-def batasi_percobaan(key: str, maks: int = 5, jendela_detik: int = 300) -> None:
+def batasi_percobaan(key: str, maks: int = 5, jendela_detik: int = 60) -> None:
     """
     Batasi jumlah percobaan per `key` (mis. gabungan IP + endpoint) dalam
     jendela waktu tertentu. Lempar HTTP 429 (dengan header Retry-After
