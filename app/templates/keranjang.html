@@ -9,6 +9,8 @@
 
 {% block script %}
 <script>
+let CART_CACHE = null;
+
 async function muatKeranjang() {
     const token = localStorage.getItem("access_token");
     const container = document.getElementById("keranjang-isi");
@@ -24,15 +26,30 @@ async function muatKeranjang() {
         return;
     }
     const cart = await res.json();
+    CART_CACHE = cart;
 
     if (!cart.items.length) {
         container.innerHTML = '<p>Keranjang masih kosong. <a href="/">Yuk pilih menu dulu</a>.</p>';
         return;
     }
 
-    let html = '<div class="cart-list">';
+    const subtotal = cart.items.reduce((sum, item) => sum + item.harga_saat_beli * item.jumlah, 0);
+
+    let html = `
+    <div class="pengiriman-pilih">
+        <label class="pengiriman-opsi">
+            <input type="radio" name="pengiriman" value="diantar" ${cart.metode_pengiriman === "diantar" ? "checked" : ""} onchange="ubahPengiriman('diantar')">
+            🛵 Diantar <span class="mono">(+Rp${(15000).toLocaleString("id-ID")})</span>
+        </label>
+        <label class="pengiriman-opsi">
+            <input type="radio" name="pengiriman" value="ambil_sendiri" ${cart.metode_pengiriman === "ambil_sendiri" ? "checked" : ""} onchange="ubahPengiriman('ambil_sendiri')">
+            🏪 Ambil Sendiri <span class="mono">(Gratis)</span>
+        </label>
+    </div>
+    <div class="cart-list">`;
+
     for (const item of cart.items) {
-        const subtotal = item.harga_saat_beli * item.jumlah;
+        const subtotalItem = item.harga_saat_beli * item.jumlah;
         const nama = item.produk ? item.produk.nama : "-";
         const foto = item.produk && item.produk.gambar_url
             ? `<img src="${item.produk.gambar_url}" class="keranjang-thumb">`
@@ -54,14 +71,37 @@ async function muatKeranjang() {
                     <span>${item.jumlah}</span>
                     <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah + 1})">+</button>
                 </div>
-                <p class="cart-item-subtotal mono">Rp${subtotal.toLocaleString("id-ID")}</p>
+                <p class="cart-item-subtotal mono">Rp${subtotalItem.toLocaleString("id-ID")}</p>
             </div>
+            <input
+                type="text"
+                class="catatan-input"
+                placeholder="Catatan (opsional, mis: tanpa bawang)"
+                value="${item.catatan ? item.catatan.replace(/"/g, "&quot;") : ""}"
+                onchange="ubahCatatan(${item.id}, ${item.produk_id}, ${item.jumlah}, this.value)"
+            >
         </div>`;
     }
     html += "</div>";
-    html += `<p class="total">Total: Rp${cart.total_harga.toLocaleString("id-ID")}</p>
-        <button onclick="checkout()">Checkout</button>`;
+
+    html += `
+    <div class="ringkasan-total">
+        <p><span>Subtotal</span><span class="mono">Rp${subtotal.toLocaleString("id-ID")}</span></p>
+        <p><span>Ongkir</span><span class="mono">Rp${cart.ongkir.toLocaleString("id-ID")}</span></p>
+        <p class="total"><span>Total</span><span class="mono">Rp${cart.total_harga.toLocaleString("id-ID")}</span></p>
+    </div>
+    <button onclick="checkout()">Checkout</button>`;
     container.innerHTML = html;
+}
+
+async function ubahPengiriman(metode) {
+    const token = localStorage.getItem("access_token");
+    await fetch("/keranjang/pengiriman", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ metode_pengiriman: metode }),
+    });
+    muatKeranjang();
 }
 
 async function ubahJumlah(itemId, produkId, jumlahBaru) {
@@ -70,11 +110,14 @@ async function ubahJumlah(itemId, produkId, jumlahBaru) {
 
     if (jumlahBaru < 1) return;
 
+    const itemLama = CART_CACHE ? CART_CACHE.items.find((i) => i.id === itemId) : null;
+    const catatan = itemLama ? itemLama.catatan : null;
+
     const token = localStorage.getItem("access_token");
     const res = await fetch(`/keranjang/items/${itemId}`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahBaru }),
+        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahBaru, catatan }),
     });
 
     if (!res.ok) {
@@ -84,6 +127,16 @@ async function ubahJumlah(itemId, produkId, jumlahBaru) {
 
     muatKeranjang();
     updateCartBadge();
+}
+
+async function ubahCatatan(itemId, produkId, jumlah, catatanBaru) {
+    const token = localStorage.getItem("access_token");
+    await fetch(`/keranjang/items/${itemId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ produk_id: produkId, jumlah, catatan: catatanBaru }),
+    });
+    showToast("Catatan disimpan");
 }
 
 async function hapusItem(itemId) {
