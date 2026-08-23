@@ -33,16 +33,32 @@ def _get_pending_cart(db: Session, user: models.User) -> models.Order:
 
 
 def _mark_as_paid(db: Session, order: models.Order) -> None:
-    if order.status != "dibayar":  # cegah stok dikurangi dua kali kalau notifikasi masuk berkali-kali
-        for item in order.items:
-            item.produk.stok -= item.jumlah
+    # Stok sudah dikurangi (direservasi) saat checkout, jadi di sini cuma ubah status.
+    if order.status not in ("dibayar", "selesai"):
         order.status = "dibayar"
+        db.commit()
+
+
+def _mark_as_cancelled(db: Session, order: models.Order) -> None:
+    # Kembalikan stok yang sempat direservasi saat checkout, kecuali order sudah lunas.
+    if order.status not in ("batal", "dibayar", "selesai"):
+        for item in order.items:
+            item.produk.stok += item.jumlah
+        order.status = "batal"
         db.commit()
 
 
 @router.post("/checkout")
 def checkout(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     cart = _get_pending_cart(db, current_user)
+
+    # Validasi ulang stok — bisa saja berubah sejak item ditambahkan ke keranjang
+    for item in cart.items:
+        if item.jumlah > item.produk.stok:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Stok {item.produk.nama} tidak cukup, sisa: {item.produk.stok}",
+            )
 
     order_id = f"cakyud-{cart.id}-{secrets.token_hex(4)}"
     ongkir = int(cart.ongkir or 0)
@@ -72,6 +88,11 @@ def checkout(db: Session = Depends(get_db), current_user: models.User = Depends(
     }
 
     transaction = snap.create_transaction(param)
+
+    # Reservasi stok sekarang juga (bukan pas pembayaran dikonfirmasi) — biar nggak
+    # kejadian 2 orang checkout barang terakhir bersamaan dan stok jadi minus.
+    for item in cart.items:
+        item.produk.stok -= item.jumlah
 
     cart.status = "menunggu_pembayaran"
     cart.payment_method = "midtrans"
@@ -109,8 +130,7 @@ async def midtrans_webhook(request: Request, db: Session = Depends(get_db)):
     if transaction_status in ("capture", "settlement") and fraud_status in (None, "accept"):
         _mark_as_paid(db, order)
     elif transaction_status in ("cancel", "deny", "expire"):
-        order.status = "batal"
-        db.commit()
+        _mark_as_cancelled(db, order)
     elif transaction_status == "pending":
         order.status = "menunggu_pembayaran"
         db.commit()
@@ -128,7 +148,11 @@ def cek_status_manual(
     result = core_api.transactions.status(order_id)
 
     order = db.query(models.Order).filter(models.Order.midtrans_order_id == order_id).first()
-    if order and result.get("transaction_status") in ("capture", "settlement"):
-        _mark_as_paid(db, order)
+    if order:
+        transaction_status = result.get("transaction_status")
+        if transaction_status in ("capture", "settlement"):
+            _mark_as_paid(db, order)
+        elif transaction_status in ("cancel", "deny", "expire"):
+            _mark_as_cancelled(db, order)
 
     return result
