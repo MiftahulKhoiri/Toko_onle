@@ -30,7 +30,14 @@ try:
 except sqlite3.OperationalError as e:
     print(f"- Lewati 'alamat_id': {e}")
 
-# 3. Pindahkan alamat lama dari profil user (kalau ada) ke tabel alamat baru
+# 3. Tambah kolom foto_url ke users (buat fitur foto profil)
+try:
+    cur.execute("ALTER TABLE users ADD COLUMN foto_url VARCHAR(255)")
+    print("✓ Kolom 'foto_url' ditambahkan ke tabel 'users'")
+except sqlite3.OperationalError as e:
+    print(f"- Lewati 'foto_url': {e}")
+
+# 4. Pindahkan alamat lama dari profil user (kalau ada) ke tabel alamat baru
 cur.execute("""
     SELECT id, nama, alamat_jalan, kelurahan, kecamatan, kota, provinsi, kode_pos
     FROM users
