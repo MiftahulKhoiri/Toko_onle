@@ -71,6 +71,7 @@ class UserResponse(UserBase):
 
     id: int
     is_admin: bool = False
+    foto_url: Optional[str] = None
     created_at: datetime
 
 
