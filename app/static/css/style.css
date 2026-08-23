@@ -115,6 +115,7 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .form-box input:focus, .form-box textarea:focus { border-color: var(--cabai); outline: none; }
 .form-box button { width: 100%; margin-top: 1.6rem; padding: 0.65rem; background: var(--cabai); color: var(--santan); }
 .form-box button:hover { background: var(--cabai-tua); }
+.form-box button:disabled { background: #cbbfa9; color: #8a7d68; cursor: not-allowed; }
 .form-box p { margin-top: 1rem; font-size: 0.85rem; }
 .form-box a { color: var(--cabai); font-weight: 600; }
 .error { color: var(--cabai-tua); margin-top: 0.8rem; font-size: 0.85rem; }
