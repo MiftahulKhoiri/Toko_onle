@@ -30,8 +30,9 @@ class User(Base):
     email = Column(String(100), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
     telepon = Column(String(20), nullable=True)
+    foto_url = Column(String(255), nullable=True)  # foto profil, cuma 1
 
-    # --- Alamat lama di profil (dipertahankan biar data lama nggak hilang, sudah nggak dipakai di alur checkout baru) ---
+    # --- Alamat lama di profil (dipertahankan, sudah nggak dipakai di alur checkout baru) ---
     alamat_jalan = Column(Text, nullable=True)
     kelurahan = Column(String(100), nullable=True)
     kecamatan = Column(String(100), nullable=True)
@@ -51,7 +52,7 @@ class Alamat(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    label = Column(String(50), default="Rumah")  # mis: "Rumah", "Kantor"
+    label = Column(String(50), default="Rumah")
     alamat_jalan = Column(Text, nullable=True)
     kelurahan = Column(String(100), nullable=True)
     kecamatan = Column(String(100), nullable=True)
