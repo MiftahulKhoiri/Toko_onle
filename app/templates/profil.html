@@ -3,72 +3,102 @@
 
 {% block content %}
 <div class="form-box" style="max-width: 600px; margin: 2rem auto;">
-    <h1>Profil & Alamat Pengiriman</h1>
 
-    <div id="identitas-container" class="profile-info" style="margin-bottom: 1.5rem; line-height: 1.6;">
-        <p><strong>Nama Lengkap:</strong> <span id="view-nama">Memuat...</span></p>
-        <p><strong>Email:</strong> <span id="view-email">Memuat...</span></p>
-        <p><strong>No. Telepon:</strong> <span id="view-telepon">-</span></p>
-        <p><strong>Alamat Lengkap:</strong> <span id="view-alamat-gabungan">-</span></p>
+    <!-- ===== TAMPILAN PROFIL (default) ===== -->
+    <div id="tampilan-profil">
+        <div class="profil-avatar-wrap">
+            <div id="profil-avatar" class="profil-avatar">?</div>
+            <h1 id="view-nama">Memuat...</h1>
+            <p id="view-email" class="profil-email">-</p>
+        </div>
+
+        <div class="profil-info-list">
+            <div class="profil-info-item">
+                <span class="profil-info-label">📱 No. Telepon</span>
+                <span id="view-telepon">-</span>
+            </div>
+            <div class="profil-info-item">
+                <span class="profil-info-label">📍 Alamat</span>
+                <span id="view-alamat-gabungan">-</span>
+            </div>
+        </div>
+
+        <a href="/checkout/alamat" class="profil-kelola-alamat">🗂️ Kelola Alamat Pengiriman</a>
+
+        <button id="btn-edit-profil" onclick="tampilkanEdit()" style="margin-top: 1.2rem; width: 100%;">✏️ Edit Profil</button>
+
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
+
+        <button onclick="logout()" style="background-color: #dc3545; color: white; width: 100%;">
+            🚪 Logout / Keluar
+        </button>
     </div>
 
-    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #ddd;">
+    <!-- ===== FORM EDIT (disembunyikan sampai tombol Edit ditekan) ===== -->
+    <div id="form-edit-profil" style="display: none;">
+        <h2>Edit Data Profil</h2>
+        <form id="edit-profil-form">
+            <label for="edit-nama">Nama Lengkap</label>
+            <input type="text" id="edit-nama" required>
 
-    <h2>Edit Data Profil</h2>
-    <form id="edit-profil-form">
-        <label for="edit-nama">Nama Lengkap</label>
-        <input type="text" id="edit-nama" required>
+            <label for="edit-email">Email</label>
+            <input type="email" id="edit-email" disabled style="background-color: #eee;" title="Email tidak dapat diubah">
 
-        <label for="edit-email">Email</label>
-        <input type="email" id="edit-email" disabled style="background-color: #eee;" title="Email tidak dapat diubah">
+            <label for="edit-telepon">No. Telepon / WhatsApp</label>
+            <input type="tel" id="edit-telepon" placeholder="Contoh: 08123456789">
 
-        <label for="edit-telepon">No. Telepon / WhatsApp</label>
-        <input type="tel" id="edit-telepon" placeholder="Contoh: 08123456789">
+            <h3 style="margin-top: 1.5rem; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">Rincian Alamat Pengiriman</h3>
 
-        <h3 style="margin-top: 1.5rem; font-size: 1.1rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem;">Rincian Alamat Pengiriman</h3>
+            <label for="edit-alamat-jalan">Jalan, No. Rumah, RT/RW</label>
+            <textarea id="edit-alamat-jalan" rows="2" placeholder="Jl. Merdeka No. 12, RT 01/RW 02"></textarea>
 
-        <label for="edit-alamat-jalan">Jalan, No. Rumah, RT/RW</label>
-        <textarea id="edit-alamat-jalan" rows="2" placeholder="Jl. Merdeka No. 12, RT 01/RW 02"></textarea>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-                <label for="edit-kelurahan">Kelurahan / Desa</label>
-                <input type="text" id="edit-kelurahan" placeholder="Kelurahan">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label for="edit-kelurahan">Kelurahan / Desa</label>
+                    <input type="text" id="edit-kelurahan" placeholder="Kelurahan">
+                </div>
+                <div>
+                    <label for="edit-kecamatan">Kecamatan</label>
+                    <input type="text" id="edit-kecamatan" placeholder="Kecamatan">
+                </div>
             </div>
-            <div>
-                <label for="edit-kecamatan">Kecamatan</label>
-                <input type="text" id="edit-kecamatan" placeholder="Kecamatan">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label for="edit-kota">Kota / Kabupaten</label>
+                    <input type="text" id="edit-kota" placeholder="Kota / Kabupaten">
+                </div>
+                <div>
+                    <label for="edit-provinsi">Provinsi</label>
+                    <input type="text" id="edit-provinsi" placeholder="Provinsi">
+                </div>
             </div>
-        </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div>
-                <label for="edit-kota">Kota / Kabupaten</label>
-                <input type="text" id="edit-kota" placeholder="Kota / Kabupaten">
+            <label for="edit-kode-pos">Kode Pos</label>
+            <input type="text" id="edit-kode-pos" placeholder="12345" style="max-width: 200px;">
+
+            <div style="display:flex; gap:0.8rem; margin-top: 1.5rem;">
+                <button type="submit" style="flex:1;">💾 Simpan Perubahan</button>
+                <button type="button" onclick="tampilkanView()" style="flex:1; background:#6c757d;">Batal</button>
             </div>
-            <div>
-                <label for="edit-provinsi">Provinsi</label>
-                <input type="text" id="edit-provinsi" placeholder="Provinsi">
-            </div>
-        </div>
-
-        <label for="edit-kode-pos">Kode Pos</label>
-        <input type="text" id="edit-kode-pos" placeholder="12345" style="max-width: 200px;">
-
-        <button type="submit" style="margin-top: 1.5rem; width: 100%;">Simpan Perubahan</button>
-    </form>
-
-    <hr style="margin: 2rem 0; border: none; border-top: 1px solid #ddd;">
-
-    <button onclick="logout()" style="background-color: #dc3545; color: white; width: 100%;">
-        🚪 Logout / Keluar
-    </button>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
 {% block script %}
 <script>
 const token = localStorage.getItem("access_token");
+
+function tampilkanEdit() {
+    document.getElementById("tampilan-profil").style.display = "none";
+    document.getElementById("form-edit-profil").style.display = "block";
+}
+
+function tampilkanView() {
+    document.getElementById("form-edit-profil").style.display = "none";
+    document.getElementById("tampilan-profil").style.display = "block";
+}
 
 async function loadProfil() {
     if (!token) {
@@ -92,6 +122,7 @@ async function loadProfil() {
         document.getElementById("view-nama").textContent = user.nama || "-";
         document.getElementById("view-email").textContent = user.email || "-";
         document.getElementById("view-telepon").textContent = user.telepon || "Belum diisi";
+        document.getElementById("profil-avatar").textContent = (user.nama || "?").trim().charAt(0).toUpperCase();
 
         const komponenAlamat = [
             user.alamat_jalan,
@@ -103,7 +134,7 @@ async function loadProfil() {
         ].filter(Boolean);
 
         document.getElementById("view-alamat-gabungan").textContent =
-            komponenAlamat.length > 0 ? komponenAlamat.join(", ") : "Belum diisi lengkap";
+            komponenAlamat.length > 0 ? komponenAlamat.join(", ") : "Belum diisi";
 
         document.getElementById("edit-nama").value = user.nama || "";
         document.getElementById("edit-email").value = user.email || "";
@@ -145,7 +176,8 @@ document.getElementById("edit-profil-form").addEventListener("submit", async (e)
 
         if (res.ok) {
             showToast("Profil berhasil diperbarui!");
-            loadProfil();
+            await loadProfil();
+            tampilkanView();
             if (typeof renderNavAuth === "function") renderNavAuth();
         } else {
             const err = await res.json();
