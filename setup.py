@@ -50,8 +50,19 @@ def setup_env():
     env.setdefault("MIDTRANS_CLIENT_KEY", "")
     env.setdefault("MIDTRANS_IS_PRODUCTION", "False")
 
+    env.setdefault("SMTP_HOST", "smtp.gmail.com")
+    env.setdefault("SMTP_PORT", "587")
+    env.setdefault("SMTP_USER", "")
+    env.setdefault("SMTP_PASSWORD", "")
+    env.setdefault("SMTP_FROM_NAME", "Salome Cakyud")
+
     tulis_env(ENV_PATH, env)
     print(f"✓ File '{ENV_PATH}' siap.\n")
+
+    if not env.get("SMTP_USER") or not env.get("SMTP_PASSWORD"):
+        print("→ SMTP_USER & SMTP_PASSWORD masih kosong, isi manual nanti kalau mau aktifkan notifikasi email.")
+    if not env.get("MIDTRANS_SERVER_KEY") or not env.get("MIDTRANS_CLIENT_KEY"):
+        print("→ MIDTRANS_SERVER_KEY & MIDTRANS_CLIENT_KEY masih kosong, isi manual nanti kalau mau aktifkan pembayaran.\n")
 
 
 def setup_admin():
@@ -87,4 +98,4 @@ def setup_admin():
 if __name__ == "__main__":
     setup_env()
     setup_admin()
-    print("=== Selesai. Jalankan ulangserver: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 ")
+    print("=== Selesai. Jalankan ulang server: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 ===")
