@@ -300,3 +300,10 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
     vertical-align: middle; margin-right: 0.15rem; border: 1.5px solid rgba(255,255,255,0.4);
 }
 .nav-avatar-default { vertical-align: middle; margin-right: 0.1rem; }
+
+/* Tombol batalkan pesanan sendiri (/pesanan-saya) */
+.pesanan-batalkan {
+    width: 100%; margin-top: 0.8rem; padding: 0.55rem; background: transparent;
+    border: 1.5px solid var(--cabai-tua); color: var(--cabai-tua);
+}
+.pesanan-batalkan:hover { background: var(--cabai-tua); color: var(--santan); }
