@@ -15,6 +15,8 @@ const LABEL_PENGIRIMAN = {
     diantar: "🛵 Diantar",
     ambil_sendiri: "🏪 Ambil Sendiri",
 };
+const PER_HALAMAN = 10;
+let halamanPesanan = 1;
 
 async function cekAdmin() {
     const checkDiv = document.getElementById("admin-check");
@@ -38,8 +40,14 @@ async function cekAdmin() {
 
 async function muatPesanan() {
     const container = document.getElementById("pesanan-list");
-    const res = await fetch("/admin/pesanan", { headers: { Authorization: `Bearer ${token}` } });
+    const skip = (halamanPesanan - 1) * PER_HALAMAN;
+    const res = await fetch(`/admin/pesanan?skip=${skip}&limit=${PER_HALAMAN}`, { headers: { Authorization: `Bearer ${token}` } });
     const pesananList = await res.json();
+
+    if (!pesananList.length && halamanPesanan > 1) {
+        halamanPesanan -= 1;
+        return muatPesanan();
+    }
 
     if (!pesananList.length) {
         container.innerHTML = "<p>Belum ada pesanan masuk.</p>";
@@ -75,11 +83,25 @@ async function muatPesanan() {
         </tr>`;
     }
     html += "</table>";
+
+    html += `
+    <div class="pagination">
+        <button type="button" onclick="gantiHalamanPesanan(-1)" ${halamanPesanan <= 1 ? "disabled" : ""}>◀ Sebelumnya</button>
+        <span class="pagination-info">Halaman ${halamanPesanan}</span>
+        <button type="button" onclick="gantiHalamanPesanan(1)" ${pesananList.length < PER_HALAMAN ? "disabled" : ""}>Berikutnya ▶</button>
+    </div>`;
+
     container.innerHTML = html;
 
     document.querySelectorAll(".status-select").forEach((sel) => {
         sel.addEventListener("change", () => updateStatus(sel.dataset.orderId, sel.value));
     });
+}
+
+function gantiHalamanPesanan(arah) {
+    halamanPesanan += arah;
+    if (halamanPesanan < 1) halamanPesanan = 1;
+    muatPesanan();
 }
 
 async function updateStatus(orderId, statusBaru) {
@@ -93,8 +115,8 @@ async function updateStatus(orderId, statusBaru) {
         showToast("Status pesanan berhasil diubah!");
     } else {
         showToast("Gagal mengubah status pesanan", "error");
-        muatPesanan();
     }
+    muatPesanan();
 }
 
 (async () => {
