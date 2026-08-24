@@ -8,6 +8,8 @@
 
 {% block script %}
 <script>
+const token = localStorage.getItem("access_token");
+
 const LABEL_STATUS = {
     menunggu_pembayaran: "Menunggu Pembayaran",
     dibayar: "Dibayar",
@@ -26,7 +28,6 @@ function kelasStatus(status) {
 }
 
 async function muatPesanan() {
-    const token = localStorage.getItem("access_token");
     const container = document.getElementById("pesanan-isi");
 
     if (!token) {
@@ -64,6 +65,10 @@ async function muatPesanan() {
             itemsHtml += `<li><span>${item.jumlah}x ${namaProduk}${catatanHtml}</span><span class="mono">Rp${(item.harga_saat_beli * item.jumlah).toLocaleString("id-ID")}</span></li>`;
         }
 
+        const tombolBatalkan = p.status === "menunggu_pembayaran"
+            ? `<button type="button" class="pesanan-batalkan" onclick="batalkanPesanan(${p.id})">Batalkan Pesanan</button>`
+            : "";
+
         html += `
         <div class="pesanan-card">
             <div class="pesanan-header">
@@ -76,10 +81,28 @@ async function muatPesanan() {
             <ul class="pesanan-items">${itemsHtml}</ul>
             ${p.ongkir > 0 ? `<p class="pesanan-ongkir mono">Ongkir: Rp${p.ongkir.toLocaleString("id-ID")}</p>` : ""}
             <p class="pesanan-total mono">Total: Rp${p.total_harga.toLocaleString("id-ID")}</p>
+            ${tombolBatalkan}
         </div>`;
     }
     html += "</div>";
     container.innerHTML = html;
+}
+
+async function batalkanPesanan(orderId) {
+    if (!confirm("Yakin mau batalkan pesanan ini?")) return;
+
+    const res = await fetch(`/pesanan/${orderId}/batalkan`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.ok) {
+        showToast("Pesanan berhasil dibatalkan");
+    } else {
+        const err = await res.json();
+        showToast(err.detail || "Gagal membatalkan pesanan", "error");
+    }
+    muatPesanan();
 }
 
 muatPesanan();
