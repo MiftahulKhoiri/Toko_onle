@@ -1,25 +1,17 @@
 # app/routers/payment.py
 import hashlib
-import os
 import secrets
 
-import midtransclient
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.midtrans_client import SERVER_KEY, core_api, snap
 from app.order_status import mark_as_cancelled, mark_as_paid
 
 router = APIRouter(prefix="/payment", tags=["payment"])
-
-IS_PRODUCTION = os.getenv("MIDTRANS_IS_PRODUCTION", "False") == "True"
-SERVER_KEY = os.getenv("MIDTRANS_SERVER_KEY")
-CLIENT_KEY = os.getenv("MIDTRANS_CLIENT_KEY")
-
-snap = midtransclient.Snap(is_production=IS_PRODUCTION, server_key=SERVER_KEY, client_key=CLIENT_KEY)
-core_api = midtransclient.CoreApi(is_production=IS_PRODUCTION, server_key=SERVER_KEY, client_key=CLIENT_KEY)
 
 
 def _get_pending_cart(db: Session, user: models.User) -> models.Order:
