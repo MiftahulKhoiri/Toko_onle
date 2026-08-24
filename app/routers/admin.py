@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_admin
-from app.order_status import mark_as_cancelled, mark_as_paid
+from app.order_status import mark_as_cancelled, mark_as_paid, set_status
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -52,8 +52,7 @@ def update_status_pesanan(
     elif data.status == "batal":
         mark_as_cancelled(db, order)
     else:
-        order.status = data.status
-        db.commit()
+        set_status(db, order, data.status)
 
     db.refresh(order)
     return order
