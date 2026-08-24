@@ -15,6 +15,8 @@ STATUS_DIIZINKAN = {"menunggu_pembayaran", "dibayar", "diproses", "selesai", "ba
 
 @router.get("/pesanan", response_model=List[schemas.OrderResponse])
 def list_semua_pesanan(
+    skip: int = 0,
+    limit: int = 20,
     db: Session = Depends(get_db),
     _: models.User = Depends(get_current_admin),
 ):
@@ -22,6 +24,8 @@ def list_semua_pesanan(
         db.query(models.Order)
         .filter(models.Order.status != "pending")
         .order_by(models.Order.created_at.desc())
+        .offset(skip)
+        .limit(limit)
         .all()
     )
 
