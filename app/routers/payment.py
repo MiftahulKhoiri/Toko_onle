@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.order_status import mark_as_cancelled, mark_as_paid
 
 router = APIRouter(prefix="/payment", tags=["payment"])
 
@@ -30,20 +31,6 @@ def _get_pending_cart(db: Session, user: models.User) -> models.Order:
     if not cart or not cart.items:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Keranjang kosong")
     return cart
-
-
-def _mark_as_paid(db: Session, order: models.Order) -> None:
-    if order.status not in ("dibayar", "selesai"):
-        order.status = "dibayar"
-        db.commit()
-
-
-def _mark_as_cancelled(db: Session, order: models.Order) -> None:
-    if order.status not in ("batal", "dibayar", "selesai"):
-        for item in order.items:
-            item.produk.stok += item.jumlah
-        order.status = "batal"
-        db.commit()
 
 
 @router.post("/checkout")
@@ -144,9 +131,9 @@ async def midtrans_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order tidak ditemukan")
 
     if transaction_status in ("capture", "settlement") and fraud_status in (None, "accept"):
-        _mark_as_paid(db, order)
+        mark_as_paid(db, order)
     elif transaction_status in ("cancel", "deny", "expire"):
-        _mark_as_cancelled(db, order)
+        mark_as_cancelled(db, order)
     elif transaction_status == "pending":
         order.status = "menunggu_pembayaran"
         db.commit()
@@ -167,8 +154,8 @@ def cek_status_manual(
     if order:
         transaction_status = result.get("transaction_status")
         if transaction_status in ("capture", "settlement"):
-            _mark_as_paid(db, order)
+            mark_as_paid(db, order)
         elif transaction_status in ("cancel", "deny", "expire"):
-            _mark_as_cancelled(db, order)
+            mark_as_cancelled(db, order)
 
     return result
