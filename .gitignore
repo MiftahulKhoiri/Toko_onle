@@ -17,10 +17,10 @@ toko.db
 
 # Foto produk hasil upload (dibuat otomatis, nggak perlu ikut di-commit)
 app/static/img/produk/
+app/static/img/profil/
 
 # OS/editor
 .DS_Store
 *.swp
 .vscode/
 .idea/
-.app/static/img/profil/
