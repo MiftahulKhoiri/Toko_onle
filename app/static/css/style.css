@@ -307,3 +307,13 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
     border: 1.5px solid var(--cabai-tua); color: var(--cabai-tua);
 }
 .pesanan-batalkan:hover { background: var(--cabai-tua); color: var(--santan); }
+
+/* Pagination di panel admin (produk & pesanan) */
+.pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.2rem; }
+.pagination button {
+    background: var(--santan); border: 1.5px solid #e3d7c0; color: var(--kuah);
+    padding: 0.5rem 1rem; font-size: 0.85rem;
+}
+.pagination button:hover:not(:disabled) { border-color: var(--cabai); color: var(--cabai); }
+.pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pagination-info { font-size: 0.85rem; color: #6b5a49; font-weight: 600; }
