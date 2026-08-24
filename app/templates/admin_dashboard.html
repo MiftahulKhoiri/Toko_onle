@@ -107,6 +107,8 @@
 {% block script %}
 <script>
 const token = localStorage.getItem("access_token");
+const PER_HALAMAN = 10;
+let halamanProduk = 1;
 
 async function uploadFoto(fileInputEl) {
     if (!fileInputEl.files || !fileInputEl.files[0]) return null;
@@ -167,8 +169,14 @@ async function cekAdmin() {
 
 async function muatProduk() {
     const container = document.getElementById("daftar-produk");
-    const res = await fetch("/produk/?limit=200");
+    const skip = (halamanProduk - 1) * PER_HALAMAN;
+    const res = await fetch(`/produk/?skip=${skip}&limit=${PER_HALAMAN}`);
     const produkList = await res.json();
+
+    if (!produkList.length && halamanProduk > 1) {
+        halamanProduk -= 1;
+        return muatProduk();
+    }
 
     if (!produkList.length) {
         container.innerHTML = "<p>Belum ada produk.</p>";
@@ -208,7 +216,21 @@ async function muatProduk() {
         </tr>`;
     }
     html += "</table>";
+
+    html += `
+    <div class="pagination">
+        <button type="button" onclick="gantiHalamanProduk(-1)" ${halamanProduk <= 1 ? "disabled" : ""}>◀ Sebelumnya</button>
+        <span class="pagination-info">Halaman ${halamanProduk}</span>
+        <button type="button" onclick="gantiHalamanProduk(1)" ${produkList.length < PER_HALAMAN ? "disabled" : ""}>Berikutnya ▶</button>
+    </div>`;
+
     container.innerHTML = html;
+}
+
+function gantiHalamanProduk(arah) {
+    halamanProduk += arah;
+    if (halamanProduk < 1) halamanProduk = 1;
+    muatProduk();
 }
 
 function bukaEditModal(p) {
@@ -331,6 +353,7 @@ document.getElementById("tambah-produk-form").addEventListener("submit", async (
     document.getElementById("tambah-produk-form").reset();
     document.getElementById("p-ready").checked = true;
     document.getElementById("p-foto-preview").style.display = "none";
+    halamanProduk = 1;
     muatProduk();
 });
 
