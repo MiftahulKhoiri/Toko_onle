@@ -28,7 +28,7 @@ def _hapus_file_foto(gambar_url: Optional[str]) -> None:
         try:
             os.remove(path_file)
         except OSError:
-            pass  # kalau gagal hapus, jangan sampai bikin request utama ikut gagal
+            pass
 
 
 @router.post("/upload-foto")
@@ -64,7 +64,7 @@ def list_produk(
     query = db.query(models.Produk)
     if kategori:
         query = query.filter(models.Produk.kategori == kategori)
-    return query.offset(skip).limit(limit).all()
+    return query.order_by(models.Produk.id.desc()).offset(skip).limit(limit).all()
 
 
 @router.get("/{produk_id}", response_model=schemas.ProdukResponse)
@@ -110,7 +110,7 @@ def update_produk(
     db.refresh(db_produk)
 
     if ganti_foto:
-        _hapus_file_foto(foto_lama)  # hapus foto lama SETELAH perubahan tersimpan
+        _hapus_file_foto(foto_lama)
 
     return db_produk
 
