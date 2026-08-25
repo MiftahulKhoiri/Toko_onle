@@ -51,6 +51,13 @@ def checkout(
         cart.alamat_id = None
 
     for item in cart.items:
+        if not item.produk:
+            # Produk dihapus/hilang setelah masuk keranjang — jangan lanjut checkout, daripada
+            # crash pas hitung gross_amount atau ngurangin stok.
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Salah satu produk di keranjang sudah tidak tersedia, silakan hapus item tersebut dulu",
+            )
         if item.jumlah > item.produk.stok:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
