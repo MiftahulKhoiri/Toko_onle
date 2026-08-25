@@ -1,4 +1,17 @@
 // app/static/js/main.js
+
+// Escape teks yang berasal dari input pengguna (nama, catatan, alamat, dll) sebelum
+// ditempel lewat innerHTML, supaya nggak bisa dipakai buat nyuntik HTML/JS (XSS).
+function escapeHtml(teks) {
+    if (teks === null || teks === undefined) return "";
+    return String(teks)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
 async function renderNavAuth() {
     const token = localStorage.getItem("access_token");
     const navAuth = document.getElementById("nav-auth");
@@ -19,14 +32,14 @@ async function renderNavAuth() {
         const user = await res.json();
 
         const avatarHtml = user.foto_url
-            ? `<img src="${user.foto_url}" class="nav-avatar" alt="">`
+            ? `<img src="${escapeHtml(user.foto_url)}" class="nav-avatar" alt="">`
             : `<span class="nav-avatar-default">👤</span>`;
 
         let html = "";
         if (user.is_admin) {
             html += '<a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a> ';
         }
-        html += `<a href="/profil" class="nav-profil">${avatarHtml} ${user.nama}`;
+        html += `<a href="/profil" class="nav-profil">${avatarHtml} ${escapeHtml(user.nama)}`;
         if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
         html += "</a>";
 
