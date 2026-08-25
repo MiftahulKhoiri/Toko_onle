@@ -60,21 +60,24 @@ async function muatPesanan() {
             (s) => `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`
         ).join("");
 
+        // Semua teks yang berasal dari input pembeli (nama, catatan, alamat) WAJIB di-escape
+        // sebelum masuk innerHTML — kalau nggak, pembeli iseng bisa nyuntik <script> yang jalan
+        // di browser admin (stored XSS) dan mencuri token admin dari localStorage.
         const itemHtml = o.items.map((item) => {
-            const namaProduk = item.produk ? item.produk.nama : "-";
-            const catatanHtml = item.catatan ? ` <span class="item-catatan">📝 ${item.catatan}</span>` : "";
+            const namaProduk = escapeHtml(item.produk ? item.produk.nama : "-");
+            const catatanHtml = item.catatan ? ` <span class="item-catatan">📝 ${escapeHtml(item.catatan)}</span>` : "";
             return `${item.jumlah}x ${namaProduk}${catatanHtml}`;
         }).join("<br>");
 
-        const labelPengiriman = LABEL_PENGIRIMAN[o.metode_pengiriman] || o.metode_pengiriman;
+        const labelPengiriman = escapeHtml(LABEL_PENGIRIMAN[o.metode_pengiriman] || o.metode_pengiriman);
         const ongkirHtml = o.ongkir > 0 ? `<br><small class="mono">+Rp${o.ongkir.toLocaleString("id-ID")}</small>` : "";
         const alamatHtml = (o.metode_pengiriman === "diantar" && o.alamat)
-            ? `<br><small>${[o.alamat.alamat_jalan, o.alamat.kelurahan, o.alamat.kecamatan, o.alamat.kota].filter(Boolean).join(", ")}</small>`
+            ? `<br><small>${escapeHtml([o.alamat.alamat_jalan, o.alamat.kelurahan, o.alamat.kecamatan, o.alamat.kota].filter(Boolean).join(", "))}</small>`
             : "";
 
         html += `<tr>
             <td>#${o.id}</td>
-            <td>${o.user ? o.user.nama : "-"}</td>
+            <td>${escapeHtml(o.user ? o.user.nama : "-")}</td>
             <td>${itemHtml}</td>
             <td>${labelPengiriman}${ongkirHtml}${alamatHtml}</td>
             <td>Rp${o.total_harga.toLocaleString("id-ID")}</td>
