@@ -1,15 +1,15 @@
 # app/schemas.py
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # ---------- Produk ----------
 class ProdukBase(BaseModel):
-    nama: str
+    nama: str = Field(..., min_length=1, max_length=100)
     deskripsi: Optional[str] = None
-    harga: float
-    stok: int = 0
+    harga: float = Field(..., ge=0)
+    stok: int = Field(0, ge=0)
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
     is_ready: bool = True
@@ -21,10 +21,10 @@ class ProdukCreate(ProdukBase):
 
 
 class ProdukUpdate(BaseModel):
-    nama: Optional[str] = None
+    nama: Optional[str] = Field(None, min_length=1, max_length=100)
     deskripsi: Optional[str] = None
-    harga: Optional[float] = None
-    stok: Optional[int] = None
+    harga: Optional[float] = Field(None, ge=0)
+    stok: Optional[int] = Field(None, ge=0)
     kategori: Optional[str] = None
     gambar_url: Optional[str] = None
     is_ready: Optional[bool] = None
@@ -40,7 +40,7 @@ class ProdukResponse(ProdukBase):
 
 # ---------- User ----------
 class UserBase(BaseModel):
-    nama: str
+    nama: str = Field(..., min_length=1, max_length=100)
     email: EmailStr
     telepon: Optional[str] = None
     alamat_jalan: Optional[str] = None
@@ -52,11 +52,11 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=8, max_length=128)
 
 
 class UserUpdate(BaseModel):
-    nama: Optional[str] = None
+    nama: Optional[str] = Field(None, min_length=1, max_length=100)
     telepon: Optional[str] = None
     alamat_jalan: Optional[str] = None
     kelurahan: Optional[str] = None
@@ -87,13 +87,13 @@ class TokenData(BaseModel):
 
 # ---------- Alamat ----------
 class AlamatCreate(BaseModel):
-    label: Optional[str] = "Rumah"
-    alamat_jalan: str
-    kelurahan: Optional[str] = None
-    kecamatan: Optional[str] = None
-    kota: str
-    provinsi: Optional[str] = None
-    kode_pos: Optional[str] = None
+    label: Optional[str] = Field("Rumah", max_length=50)
+    alamat_jalan: str = Field(..., min_length=1)
+    kelurahan: Optional[str] = Field(None, max_length=100)
+    kecamatan: Optional[str] = Field(None, max_length=100)
+    kota: str = Field(..., min_length=1, max_length=100)
+    provinsi: Optional[str] = Field(None, max_length=100)
+    kode_pos: Optional[str] = Field(None, max_length=10)
 
 
 class AlamatResponse(BaseModel):
@@ -113,8 +113,8 @@ class AlamatResponse(BaseModel):
 # ---------- OrderItem ----------
 class OrderItemCreate(BaseModel):
     produk_id: int
-    jumlah: int = 1
-    catatan: Optional[str] = None
+    jumlah: int = Field(1, gt=0)
+    catatan: Optional[str] = Field(None, max_length=255)
 
 
 class OrderItemResponse(BaseModel):
