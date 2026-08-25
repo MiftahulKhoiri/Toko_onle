@@ -122,18 +122,23 @@ def update_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item tidak ditemukan di keranjang")
 
     produk = db.query(models.Produk).filter(models.Produk.id == db_item.produk_id).first()
+    if not produk:
+        # Produk-nya sudah dihapus dari katalog (jarang terjadi, tapi jaga-jaga).
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="Produk ini sudah tidak tersedia lagi, hapus item ini dari keranjang",
+        )
     if item.jumlah > produk.stok:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Stok tidak cukup, sisa stok: {produk.stok}",
         )
 
-    if item.jumlah <= 0:
-        db.delete(db_item)
-    else:
-        db_item.jumlah = item.jumlah
-        if item.catatan is not None:
-            db_item.catatan = item.catatan
+    # schemas.OrderItemCreate sudah mewajibkan jumlah > 0, jadi nggak perlu cabang "hapus kalau <= 0" lagi.
+    # Buat menghapus item, pakai endpoint DELETE /keranjang/items/{item_id}.
+    db_item.jumlah = item.jumlah
+    if item.catatan is not None:
+        db_item.catatan = item.catatan
 
     db.commit()
     _recalc_total(db, cart)
