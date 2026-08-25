@@ -50,9 +50,11 @@ async function muatKeranjang() {
 
     for (const item of cart.items) {
         const subtotalItem = item.harga_saat_beli * item.jumlah;
-        const nama = item.produk ? item.produk.nama : "-";
+        // escapeHtml() (didefinisikan di main.js) supaya nama produk & catatan pembeli sendiri
+        // nggak bisa nyuntik HTML/JS ke halaman keranjangnya sendiri.
+        const nama = escapeHtml(item.produk ? item.produk.nama : "-");
         const foto = item.produk && item.produk.gambar_url
-            ? `<img src="${item.produk.gambar_url}" class="keranjang-thumb">`
+            ? `<img src="${escapeHtml(item.produk.gambar_url)}" class="keranjang-thumb">`
             : `<div class="keranjang-thumb keranjang-thumb-kosong">🥣</div>`;
 
         html += `
@@ -77,7 +79,7 @@ async function muatKeranjang() {
                 type="text"
                 class="catatan-input"
                 placeholder="Catatan (opsional, mis: tanpa bawang)"
-                value="${item.catatan ? item.catatan.replace(/"/g, "&quot;") : ""}"
+                value="${escapeHtml(item.catatan)}"
                 onchange="ubahCatatan(${item.id}, ${item.produk_id}, ${item.jumlah}, this.value)"
             >
         </div>`;
