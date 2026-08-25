@@ -125,6 +125,22 @@ def delete_produk(
     if not db_produk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
+    # Kalau produk ini sudah pernah masuk keranjang/pesanan siapa pun, jangan dihapus permanen —
+    # bisa bikin item pesanan lama "yatim" (produk_id nunjuk ke baris yang udah nggak ada) dan
+    # error pas checkout kalau kebetulan masih ada di keranjang aktif orang lain.
+    pernah_dipesan = (
+        db.query(models.OrderItem).filter(models.OrderItem.produk_id == produk_id).first()
+    )
+    if pernah_dipesan:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Produk ini sudah pernah dipesan/masuk keranjang pembeli, jadi nggak bisa "
+                "dihapus permanen (biar riwayat pesanan nggak rusak). Set stok ke 0 dan/atau "
+                "matikan status Ready lewat menu Edit kalau mau menyembunyikannya dari pembeli."
+            ),
+        )
+
     foto = db_produk.gambar_url
     db.delete(db_produk)
     db.commit()
