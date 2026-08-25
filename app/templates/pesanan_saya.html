@@ -52,16 +52,18 @@ async function muatPesanan() {
         const tanggal = new Date(p.created_at).toLocaleString("id-ID", {
             day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
         });
-        const labelStatus = LABEL_STATUS[p.status] || p.status;
-        const labelPengiriman = LABEL_PENGIRIMAN[p.metode_pengiriman] || p.metode_pengiriman;
+        const labelStatus = escapeHtml(LABEL_STATUS[p.status] || p.status);
+        const labelPengiriman = escapeHtml(LABEL_PENGIRIMAN[p.metode_pengiriman] || p.metode_pengiriman);
+        // escapeHtml() (didefinisikan di main.js) buat jaga-jaga catatan/alamat yang user isi sendiri
+        // nggak nyuntik HTML ke halaman pesanannya sendiri.
         const alamatHtml = (p.metode_pengiriman === "diantar" && p.alamat)
-            ? ` — ${[p.alamat.alamat_jalan, p.alamat.kelurahan, p.alamat.kecamatan, p.alamat.kota].filter(Boolean).join(", ")}`
+            ? ` — ${escapeHtml([p.alamat.alamat_jalan, p.alamat.kelurahan, p.alamat.kecamatan, p.alamat.kota].filter(Boolean).join(", "))}`
             : "";
 
         let itemsHtml = "";
         for (const item of p.items) {
-            const namaProduk = item.produk ? item.produk.nama : "-";
-            const catatanHtml = item.catatan ? `<br><small class="item-catatan">📝 ${item.catatan}</small>` : "";
+            const namaProduk = escapeHtml(item.produk ? item.produk.nama : "-");
+            const catatanHtml = item.catatan ? `<br><small class="item-catatan">📝 ${escapeHtml(item.catatan)}</small>` : "";
             itemsHtml += `<li><span>${item.jumlah}x ${namaProduk}${catatanHtml}</span><span class="mono">Rp${(item.harga_saat_beli * item.jumlah).toLocaleString("id-ID")}</span></li>`;
         }
 
