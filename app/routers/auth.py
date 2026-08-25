@@ -40,13 +40,16 @@ def _hapus_foto_lama(foto_url: Optional[str]) -> None:
 def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     batasi_percobaan(f"register:{request.client.host}", maks=5, jendela_detik=600)
 
-    existing = db.query(models.User).filter(models.User.email == user.email).first()
+    # Normalisasi email biar "User@Gmail.com" dan "user@gmail.com" dianggap akun yang sama.
+    email_normal = user.email.strip().lower()
+
+    existing = db.query(models.User).filter(models.User.email == email_normal).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email sudah terdaftar")
 
     db_user = models.User(
         nama=user.nama,
-        email=user.email,
+        email=email_normal,
         hashed_password=hash_password(user.password),
         telepon=user.telepon,
         alamat_jalan=user.alamat_jalan,
@@ -66,7 +69,8 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     batasi_percobaan(f"login:{request.client.host}", maks=5, jendela_detik=300)
 
-    user = db.query(models.User).filter(models.User.email == form_data.username).first()
+    email_normal = form_data.username.strip().lower()
+    user = db.query(models.User).filter(models.User.email == email_normal).first()
 
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
