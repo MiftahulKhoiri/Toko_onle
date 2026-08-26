@@ -317,3 +317,78 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
 .pagination button:hover:not(:disabled) { border-color: var(--cabai); color: var(--cabai); }
 .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
 .pagination-info { font-size: 0.85rem; color: #6b5a49; font-weight: 600; }
+
+/* ==================== Halaman Profil Toko (landing publik, /profil-toko) ==================== */
+.tp-section-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--kuah); margin-bottom: 0.9rem; }
+
+.tp-hero {
+    position: relative; border-radius: 16px; overflow: hidden; min-height: 220px;
+    background: linear-gradient(160deg, #EADFC7, var(--kertas));
+    box-shadow: 0 4px 14px rgba(43,29,20,0.15); margin-bottom: 1.5rem;
+    display: flex; align-items: flex-end;
+}
+.tp-hero-banner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.tp-hero-overlay {
+    position: relative; width: 100%; padding: 1.4rem 1.3rem;
+    background: linear-gradient(0deg, rgba(43,29,20,0.88) 0%, rgba(43,29,20,0.25) 75%, transparent 100%);
+    color: var(--santan);
+}
+.tp-logo {
+    width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid var(--santan);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3); margin-bottom: 0.6rem; background: var(--santan); display: block;
+}
+.tp-nama-toko { font-family: var(--font-display); font-size: 1.6rem; letter-spacing: 0.01em; }
+.tp-tagline { font-size: 0.92rem; opacity: 0.92; margin-top: 0.2rem; }
+
+.tp-info-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.6rem; }
+.tp-status-pill { font-size: 0.78rem; font-weight: 700; padding: 0.4rem 0.85rem; border-radius: 999px; }
+.tp-status-buka { background: #e3ecd9; color: var(--daun); }
+.tp-status-tutup { background: #fbe0dc; color: var(--cabai-tua); }
+.tp-info-chip {
+    background: var(--santan); border: 1.5px solid #e3d7c0; border-radius: 999px;
+    padding: 0.4rem 0.85rem; font-size: 0.82rem; color: #6b5a49;
+}
+
+.tp-tentang { background: var(--santan); border-radius: 12px; padding: 1.2rem 1.3rem; margin-bottom: 1.6rem; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.tp-tentang h2 { font-family: var(--font-display); font-size: 1.15rem; color: var(--kuah); margin-bottom: 0.5rem; }
+.tp-tentang p { font-size: 0.9rem; color: #5c4d3d; line-height: 1.6; }
+
+.tp-cta-row { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-bottom: 1.8rem; }
+.tp-cta-wa {
+    flex: 1; min-width: 220px; background: #25D366; color: #fff; text-align: center;
+    padding: 0.8rem; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 0.95rem;
+    box-shadow: 0 3px 10px rgba(37,211,102,0.35);
+}
+.tp-cta-wa:hover { filter: brightness(0.95); }
+.tp-cta-delivery { display: flex; flex-wrap: wrap; gap: 0.6rem; width: 100%; }
+.tp-cta-delivery a {
+    flex: 1; min-width: 140px; text-align: center; padding: 0.65rem; border-radius: 8px;
+    background: var(--santan); border: 1.5px solid #e3d7c0; color: var(--kuah); font-weight: 600;
+    font-size: 0.85rem; text-decoration: none;
+}
+.tp-cta-delivery a:hover { border-color: var(--cabai); color: var(--cabai); }
+
+.tp-menu-kategori { margin-bottom: 1.8rem; }
+.tp-menu-kategori h3 { font-family: var(--font-display); font-size: 1.05rem; color: var(--kuah); margin-bottom: 0.8rem; }
+
+.tp-peta-wrap { border-radius: 12px; overflow: hidden; box-shadow: 0 3px 10px rgba(43,29,20,0.1); margin-bottom: 1.8rem; }
+.tp-peta-wrap iframe { width: 100%; height: 220px; border: 0; display: block; }
+.tp-alamat-teks { background: var(--santan); padding: 0.9rem 1.1rem; font-size: 0.88rem; color: #5c4d3d; }
+
+.tp-testimoni-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 1rem; margin-bottom: 1.8rem; }
+.tp-testimoni-card { background: var(--santan); border-radius: 10px; padding: 1rem 1.1rem; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.tp-testimoni-rating { color: #E8A93A; font-size: 0.9rem; margin-bottom: 0.4rem; letter-spacing: 0.1em; }
+.tp-testimoni-ulasan { font-size: 0.85rem; color: #5c4d3d; line-height: 1.55; margin-bottom: 0.6rem; font-style: italic; }
+.tp-testimoni-nama { font-size: 0.85rem; font-weight: 700; color: var(--kuah); }
+
+.tp-sosial-row { display: flex; gap: 0.8rem; justify-content: center; margin: 1.5rem 0 0.5rem; }
+.tp-sosial-row a {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--kuah); color: var(--santan);
+    display: flex; align-items: center; justify-content: center; font-size: 1.3rem; text-decoration: none;
+}
+.tp-sosial-row a:hover { background: var(--cabai); }
+
+@media (max-width: 480px) {
+    .tp-nama-toko { font-size: 1.3rem; }
+    .tp-hero { min-height: 180px; }
+}
