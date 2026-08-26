@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}Kelola Profil Toko — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<h1>Panel Admin — Profil Toko</h1>
+<div id="admin-check"></div>
+
+<div id="admin-content" style="display:none;">
+
+    <div class="form-box" style="max-width: 640px; margin: 1rem 0;">
+        <h2>Pengaturan Profil Toko</h2>
+        <form id="profil-toko-form">
+
+            <label for="pt-nama">Nama Toko</label>
+            <input type="text" id="pt-nama" required>
+
+            <label for="pt-tagline">Tagline / Slogan</label>
+            <input type="text" id="pt-tagline" placeholder="Contoh: Bakso Legen Sejak 2015">
+
+            <label for="pt-deskripsi">Tentang Toko (2–3 kalimat)</label>
+            <textarea id="pt-deskripsi" rows="3" placeholder="Ceritakan keunikan resep, bahan, atau rasa khas Salome Cak Yud"></textarea>
+
+            <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; margin-top:1rem;">
+                <input type="checkbox" id="pt-buka" checked> Toko sedang buka menerima pesanan
+            </label>
+
+            <label for="pt-jam">Jam Operasional</label>
+            <input type="text" id="pt-jam" placeholder="Contoh: Setiap hari, 10.00 - 21.00">
+
+            <label for="pt-wa">No. WhatsApp Toko</label>
+            <input type="text" id="pt-wa" placeholder="Contoh: 6281234567890 (kode negara, tanpa + atau 0 di depan)">
+
+            <label for="pt-alamat">Alamat Lengkap</label>
+            <textarea id="pt-alamat" rows="2" placeholder="Jl. Contoh No. 1, Kelurahan, Kecamatan, Kota"></textarea>
+
+            <label for="pt-maps">Link Embed Google Maps</label>
+            <input type="text" id="pt-maps" placeholder="https://www.google.com/maps/embed?...">
+            <p style="font-size:0.78rem; color:#666; margin-top:0.2rem;">
+                Buka Google Maps → cari lokasi toko → Bagikan → Sematkan peta → salin isi atribut <span class="mono">src</span> dari kode <span class="mono">&lt;iframe&gt;</span>-nya ke sini.
+            </p>
+
+            <h3 style="margin-top:1.4rem; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.3rem;">Logo Toko</h3>
+            <input type="file" id="pt-logo-file" accept="image/png, image/jpeg, image/webp">
+            <img id="pt-logo-preview" style="display:none; max-width:100px; margin-top:0.5rem; border-radius:50%;">
+            <label for="pt-logo-url" style="margin-top:0.6rem;">Atau tempel URL Logo (opsional)</label>
+            <input type="text" id="pt-logo-url" placeholder="https://domain.com/logo.jpg">
+
+            <h3 style="margin-top:1.4rem; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.3rem;">Foto Banner / Hero</h3>
+            <input type="file" id="pt-banner-file" accept="image/png, image/jpeg, image/webp">
+            <img id="pt-banner-preview" style="display:none; max-width:100%; margin-top:0.5rem; border-radius:8px;">
+            <label for="pt-banner-url" style="margin-top:0.6rem;">Atau tempel URL Banner (opsional)</label>
+            <input type="text" id="pt-banner-url" placeholder="https://domain.com/banner.jpg">
+
+            <h3 style="margin-top:1.4rem; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.3rem;">Link Delivery Online (opsional)</h3>
+            <label for="pt-gofood">Link GoFood</label>
+            <input type="text" id="pt-gofood" placeholder="https://gofood.co.id/...">
+            <label for="pt-grabfood">Link GrabFood</label>
+            <input type="text" id="pt-grabfood" placeholder="https://food.grab.com/...">
+            <label for="pt-shopeefood">Link ShopeeFood</label>
+            <input type="text" id="pt-shopeefood" placeholder="https://shopeefood.co.id/...">
+
+            <h3 style="margin-top:1.4rem; font-size:1rem; border-bottom:1px solid #eee; padding-bottom:0.3rem;">Media Sosial (opsional)</h3>
+            <label for="pt-ig">Link Instagram</label>
+            <input type="text" id="pt-ig" placeholder="https://instagram.com/...">
+            <label for="pt-tiktok">Link TikTok</label>
+            <input type="text" id="pt-tiktok" placeholder="https://tiktok.com/@...">
+            <label for="pt-fb">Link Facebook</label>
+            <input type="text" id="pt-fb" placeholder="https://facebook.com/...">
+
+            <button type="submit" style="margin-top:1.5rem;">💾 Simpan Profil Toko</button>
+        </form>
+        <p id="profil-toko-msg" class="error"></p>
+    </div>
+
+    <div class="form-box" style="max-width: 640px; margin: 1.5rem 0;">
+        <h2>Tambah Testimoni</h2>
+        <form id="tambah-testimoni-form">
+            <label for="tt-nama">Nama Pelanggan</label>
+            <input type="text" id="tt-nama" required>
+
+            <label for="tt-rating">Rating (1-5)</label>
+            <input type="number" id="tt-rating" min="1" max="5" value="5" required>
+
+            <label for="tt-ulasan">Ulasan</label>
+            <textarea id="tt-ulasan" rows="2" required></textarea>
+
+            <label for="tt-foto-file">Screenshot Ulasan (opsional)</label>
+            <input type="file" id="tt-foto-file" accept="image/png, image/jpeg, image/webp">
+            <img id="tt-foto-preview" style="display:none; max-width:120px; margin-top:0.5rem; border-radius:6px;">
+
+            <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; margin-top:1rem;">
+                <input type="checkbox" id="tt-ditampilkan" checked> Tampilkan di halaman profil toko
+            </label>
+
+            <button type="submit" style="margin-top:1rem;">➕ Tambah Testimoni</button>
+        </form>
+        <p id="testimoni-msg" class="error"></p>
+    </div>
+
+    <h2>Daftar Testimoni</h2>
+    <div id="daftar-testimoni">Memuat...</div>
+</div>
+
+<div id="edit-testimoni-modal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content:center; align-items:center;">
+    <div class="form-box" style="background:white; padding:2rem; border-radius:8px; max-width:500px; width:90%; max-height:90vh; overflow-y:auto;">
+        <h2>Edit Testimoni</h2>
+        <input type="hidden" id="edit-tt-id">
+
+        <label for="edit-tt-nama">Nama Pelanggan</label>
+        <input type="text" id="edit-tt-nama" required>
+
+        <label for="edit-tt-rating">Rating (1-5)</label>
+        <input type="number" id="edit-tt-rating" min="1" max="5" required>
+
+        <label for="edit-tt-ulasan">Ulasan</label>
+        <textarea id="edit-tt-ulasan" rows="2" required></textarea>
+
+        <label for="edit-tt-foto-file">Ganti Screenshot (opsional)</label>
+        <input type="file" id="edit-tt-foto-file" accept="image/png, image/jpeg, image/webp">
+        <img id="edit-tt-foto-preview" style="display:none; max-width:120px; margin-top:0.5rem; border-radius:6px;">
+        <label for="edit-tt-foto-url" style="margin-top:0.5rem;">URL Foto Saat Ini</label>
+        <input type="text" id="edit-tt-foto-url">
+
+        <label style="cursor:pointer; display:flex; align-items:center; gap:0.4rem; margin-top:1rem;">
+            <input type="checkbox" id="edit-tt-ditampilkan"> Tampilkan di halaman profil toko
+        </label>
+
+        <div style="display:flex; gap:1rem; margin-top:1rem;">
+            <button onclick="simpanEditTestimoni()" style="flex:1;">💾 Simpan</button>
+            <button onclick="tutupEditTestimoni()" style="flex:1; background:#6c757d;">Batal</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+const token = localStorage.getItem("access_token");
+let TESTIMONI_CACHE = [];
+
+async function cekAdmin() {
+    const checkDiv = document.getElementById("admin-check");
+    if (!token) {
+        checkDiv.innerHTML = '<p>Silakan <a href="/login">login</a> dulu.</p>';
+        return false;
+    }
+    const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        checkDiv.innerHTML = '<p>Sesi habis, silakan <a href="/login">login</a> lagi.</p>';
+        return false;
+    }
+    const user = await res.json();
+    if (!user.is_admin) {
+        checkDiv.innerHTML = "<p>Akses ditolak — halaman ini khusus admin.</p>";
+        return false;
+    }
+    document.getElementById("admin-content").style.display = "block";
+    return true;
+}
+
+async function uploadGambarToko(fileInputEl) {
+    if (!fileInputEl.files || !fileInputEl.files[0]) return null;
+    const formData = new FormData();
+    formData.append("file", fileInputEl.files[0]);
+
+    const res = await fetch("/profil-toko/upload-gambar", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || "Gagal upload gambar");
+    }
+    const data = await res.json();
+    return data.url;
+}
+
+function pratinjauFile(inputEl, previewEl) {
+    inputEl.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) {
+            previewEl.src = URL.createObjectURL(e.target.files[0]);
+            previewEl.style.display = "block";
+        } else {
+            previewEl.style.display = "none";
+        }
+    });
+}
+pratinjauFile(document.getElementById("pt-logo-file"), document.getElementById("pt-logo-preview"));
+pratinjauFile(document.getElementById("pt-banner-file"), document.getElementById("pt-banner-preview"));
+pratinjauFile(document.getElementById("tt-foto-file"), document.getElementById("tt-foto-preview"));
+pratinjauFile(document.getElementById("edit-tt-foto-file"), document.getElementById("edit-tt-foto-preview"));
+
+async function muatProfilToko() {
+    const res = await fetch("/profil-toko");
+    const profil = await res.json();
+
+    document.getElementById("pt-nama").value = profil.nama_toko || "";
+    document.getElementById("pt-tagline").value = profil.tagline || "";
+    document.getElementById("pt-deskripsi").value = profil.deskripsi || "";
+    document.getElementById("pt-buka").checked = !!profil.is_buka;
+    document.getElementById("pt-jam").value = profil.jam_operasional || "";
+    document.getElementById("pt-wa").value = profil.kontak_wa || "";
+    document.getElementById("pt-alamat").value = profil.alamat || "";
+    document.getElementById("pt-maps").value = profil.maps_embed_url || "";
+    document.getElementById("pt-logo-url").value = profil.logo_url || "";
+    document.getElementById("pt-banner-url").value = profil.banner_url || "";
+    document.getElementById("pt-gofood").value = profil.gofood_url || "";
+    document.getElementById("pt-grabfood").value = profil.grabfood_url || "";
+    document.getElementById("pt-shopeefood").value = profil.shopeefood_url || "";
+    document.getElementById("pt-ig").value = profil.instagram_url || "";
+    document.getElementById("pt-tiktok").value = profil.tiktok_url || "";
+    document.getElementById("pt-fb").value = profil.facebook_url || "";
+
+    if (profil.logo_url) {
+        document.getElementById("pt-logo-preview").src = profil.logo_url;
+        document.getElementById("pt-logo-preview").style.display = "block";
+    }
+    if (profil.banner_url) {
+        document.getElementById("pt-banner-preview").src = profil.banner_url;
+        document.getElementById("pt-banner-preview").style.display = "block";
+    }
+}
+
+document.getElementById("profil-toko-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("profil-toko-msg");
+    msg.textContent = "";
+
+    try {
+        let logoUrl = document.getElementById("pt-logo-url").value.trim() || null;
+        const logoFile = document.getElementById("pt-logo-file");
+        if (logoFile.files && logoFile.files[0]) {
+            logoUrl = await uploadGambarToko(logoFile);
+        }
+
+        let bannerUrl = document.getElementById("pt-banner-url").value.trim() || null;
+        const bannerFile = document.getElementById("pt-banner-file");
+        if (bannerFile.files && bannerFile.files[0]) {
+            bannerUrl = await uploadGambarToko(bannerFile);
+        }
+
+        const payload = {
+            nama_toko: document.getElementById("pt-nama").value,
+            tagline: document.getElementById("pt-tagline").value || null,
+            deskripsi: document.getElementById("pt-deskripsi").value || null,
+            is_buka: document.getElementById("pt-buka").checked,
+            jam_operasional: document.getElementById("pt-jam").value || null,
+            kontak_wa: document.getElementById("pt-wa").value || null,
+            alamat: document.getElementById("pt-alamat").value || null,
+            maps_embed_url: document.getElementById("pt-maps").value || null,
+            logo_url: logoUrl,
+            banner_url: bannerUrl,
+            gofood_url: document.getElementById("pt-gofood").value || null,
+            grabfood_url: document.getElementById("pt-grabfood").value || null,
+            shopeefood_url: document.getElementById("pt-shopeefood").value || null,
+            instagram_url: document.getElementById("pt-ig").value || null,
+            tiktok_url: document.getElementById("pt-tiktok").value || null,
+            facebook_url: document.getElementById("pt-fb").value || null,
+        };
+
+        const res = await fetch("/profil-toko", {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menyimpan profil toko");
+        }
+
+        showToast("Profil toko berhasil disimpan!");
+        await muatProfilToko();
+    } catch (err) {
+        msg.textContent = err.message || "Gagal menyimpan profil toko";
+    }
+});
+
+async function muatDaftarTestimoni() {
+    const container = document.getElementById("daftar-testimoni");
+    const res = await fetch("/testimoni/semua", { headers: { Authorization: `Bearer ${token}` } });
+    const list = await res.json();
+    TESTIMONI_CACHE = list;
+
+    if (!list.length) {
+        container.innerHTML = "<p>Belum ada testimoni.</p>";
+        return;
+    }
+
+    let html = `
+        <table class="keranjang-table" style="width:100%; border-collapse:collapse;">
+            <tr>
+                <th>Pelanggan</th>
+                <th>Rating</th>
+                <th>Ulasan</th>
+                <th>Tampil?</th>
+                <th>Aksi</th>
+            </tr>`;
+
+    for (const t of list) {
+        const bintang = "★".repeat(t.rating) + "☆".repeat(5 - t.rating);
+        html += `<tr>
+            <td><strong>${escapeHtml(t.nama_pelanggan)}</strong></td>
+            <td>${bintang}</td>
+            <td style="max-width:220px;">${escapeHtml(t.ulasan)}</td>
+            <td>${t.ditampilkan ? "✅" : "🚫"}</td>
+            <td>
+                <button onclick="bukaEditTestimoni(${t.id})">✏️ Edit</button>
+                <button onclick="hapusTestimoni(${t.id})" style="background:#dc3545; color:white;">🗑️ Hapus</button>
+            </td>
+        </tr>`;
+    }
+    html += "</table>";
+    container.innerHTML = html;
+}
+
+document.getElementById("tambah-testimoni-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById("testimoni-msg");
+    msg.textContent = "";
+
+    try {
+        let fotoUrl = null;
+        const fotoFile = document.getElementById("tt-foto-file");
+        if (fotoFile.files && fotoFile.files[0]) {
+            fotoUrl = await uploadGambarToko(fotoFile);
+        }
+
+        const payload = {
+            nama_pelanggan: document.getElementById("tt-nama").value,
+            rating: parseInt(document.getElementById("tt-rating").value, 10),
+            ulasan: document.getElementById("tt-ulasan").value,
+            foto_url: fotoUrl,
+            ditampilkan: document.getElementById("tt-ditampilkan").checked,
+        };
+
+        const res = await fetch("/testimoni", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menambah testimoni");
+        }
+
+        showToast("Testimoni berhasil ditambahkan!");
+        e.target.reset();
+        document.getElementById("tt-foto-preview").style.display = "none";
+        document.getElementById("tt-rating").value = 5;
+        document.getElementById("tt-ditampilkan").checked = true;
+        await muatDaftarTestimoni();
+    } catch (err) {
+        msg.textContent = err.message || "Gagal menambah testimoni";
+    }
+});
+
+function bukaEditTestimoni(id) {
+    const t = TESTIMONI_CACHE.find((x) => x.id === id);
+    if (!t) return;
+
+    document.getElementById("edit-tt-id").value = t.id;
+    document.getElementById("edit-tt-nama").value = t.nama_pelanggan;
+    document.getElementById("edit-tt-rating").value = t.rating;
+    document.getElementById("edit-tt-ulasan").value = t.ulasan;
+    document.getElementById("edit-tt-ditampilkan").checked = !!t.ditampilkan;
+    document.getElementById("edit-tt-foto-url").value = t.foto_url || "";
+
+    document.getElementById("edit-tt-foto-file").value = "";
+    const preview = document.getElementById("edit-tt-foto-preview");
+    if (t.foto_url) {
+        preview.src = t.foto_url;
+        preview.style.display = "block";
+    } else {
+        preview.style.display = "none";
+    }
+
+    document.getElementById("edit-testimoni-modal").style.display = "flex";
+}
+
+function tutupEditTestimoni() {
+    document.getElementById("edit-testimoni-modal").style.display = "none";
+}
+
+async function simpanEditTestimoni() {
+    const id = document.getElementById("edit-tt-id").value;
+    try {
+        let fotoUrl = document.getElementById("edit-tt-foto-url").value.trim() || null;
+        const fotoFile = document.getElementById("edit-tt-foto-file");
+        if (fotoFile.files && fotoFile.files[0]) {
+            fotoUrl = await uploadGambarToko(fotoFile);
+        }
+
+        const payload = {
+            nama_pelanggan: document.getElementById("edit-tt-nama").value,
+            rating: parseInt(document.getElementById("edit-tt-rating").value, 10),
+            ulasan: document.getElementById("edit-tt-ulasan").value,
+            foto_url: fotoUrl,
+            ditampilkan: document.getElementById("edit-tt-ditampilkan").checked,
+        };
+
+        const res = await fetch(`/testimoni/${id}`, {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menyimpan perubahan");
+        }
+
+        showToast("Testimoni berhasil diperbarui!");
+        tutupEditTestimoni();
+        await muatDaftarTestimoni();
+    } catch (err) {
+        showToast(err.message || "Gagal menyimpan perubahan", "error");
+    }
+}
+
+async function hapusTestimoni(id) {
+    if (!confirm("Hapus testimoni ini?")) return;
+    const res = await fetch(`/testimoni/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+        showToast("Testimoni dihapus");
+    } else {
+        showToast("Gagal menghapus testimoni", "error");
+    }
+    muatDaftarTestimoni();
+}
+
+(async () => {
+    if (await cekAdmin()) {
+        await muatProfilToko();
+        await muatDaftarTestimoni();
+    }
+})();
+</script>
+{% endblock %}
