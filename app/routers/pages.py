@@ -78,8 +78,22 @@ def admin_pesanan_page(request: Request):
     )
 
 
+@router.get("/panel-admin/profil-toko")
+def admin_profil_toko_page(request: Request):
+    return templates.TemplateResponse(
+        request, "admin_profil_toko.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
 @router.get("/profil", response_class=HTMLResponse)
 def halaman_profil(request: Request):
     return templates.TemplateResponse(
         request, "profil.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
+@router.get("/profil-toko")
+def profil_toko_page(request: Request):
+    return templates.TemplateResponse(
+        request, "profil_toko.html", {"nama_toko": NAMA_TOKO}
     )
