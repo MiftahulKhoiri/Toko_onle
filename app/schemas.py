@@ -166,11 +166,16 @@ class OrderResponse(BaseModel):
 
 # ---------- Profil Toko ----------
 def _cek_format_url(v: Optional[str]) -> Optional[str]:
-    if v is None or v == "":
+    """Rapikan URL opsional — kalau lupa ketik http(s):// di depan, tambahin otomatis
+    daripada nolak. Ini juga sekalian nutup celah URI aneh (mis. javascript:...) karena
+    hasil akhirnya selalu dipaksa berawalan https://."""
+    if v is None:
         return None
     v = v.strip()
+    if not v:
+        return None
     if not (v.startswith("http://") or v.startswith("https://")):
-        raise ValueError("URL harus diawali dengan http:// atau https://")
+        v = f"https://{v}"
     return v
 
 
