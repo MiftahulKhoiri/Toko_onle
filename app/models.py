@@ -98,3 +98,43 @@ class OrderItem(Base):
 
     order = relationship("Order", back_populates="items")
     produk = relationship("Produk", back_populates="order_items")
+
+
+class ProfilToko(Base):
+    """
+    Pengaturan halaman profil toko (landing publik yang dibuka lewat klik logo di navbar).
+    Cuma ada 1 baris data — dibuat otomatis kalau belum ada, lihat _get_or_create_profil
+    di routers/profil_toko.py.
+    """
+    __tablename__ = "profil_toko"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nama_toko = Column(String(100), nullable=False, default="Salome Cakyud")
+    tagline = Column(String(150), nullable=True)
+    deskripsi = Column(Text, nullable=True)
+    alamat = Column(Text, nullable=True)
+    maps_embed_url = Column(Text, nullable=True)
+    jam_operasional = Column(String(100), nullable=True)
+    is_buka = Column(Boolean, default=True)  # status buka/tutup di-toggle manual oleh admin
+    kontak_wa = Column(String(20), nullable=True)
+    logo_url = Column(String(255), nullable=True)
+    banner_url = Column(String(255), nullable=True)
+    gofood_url = Column(String(255), nullable=True)
+    grabfood_url = Column(String(255), nullable=True)
+    shopeefood_url = Column(String(255), nullable=True)
+    instagram_url = Column(String(255), nullable=True)
+    tiktok_url = Column(String(255), nullable=True)
+    facebook_url = Column(String(255), nullable=True)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class Testimoni(Base):
+    __tablename__ = "testimoni"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nama_pelanggan = Column(String(100), nullable=False)
+    rating = Column(Integer, nullable=False, default=5)
+    ulasan = Column(Text, nullable=False)
+    foto_url = Column(String(255), nullable=True)  # opsional: screenshot ulasan
+    ditampilkan = Column(Boolean, default=True)  # admin bisa sembunyikan tanpa hapus
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
