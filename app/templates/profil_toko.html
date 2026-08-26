@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+{% block title %}Profil Toko — {{ nama_toko }}{% endblock %}
+
+{% block content %}
+<div id="tp-hero" class="tp-hero"><p style="padding:2rem; color:#8a7d68;">Memuat...</p></div>
+<div id="tp-info-bar" class="tp-info-bar"></div>
+<div id="tp-cta-row" class="tp-cta-row"></div>
+<div id="tp-tentang"></div>
+<div id="tp-menu"></div>
+<div id="tp-peta"></div>
+<div id="tp-testimoni"></div>
+<div id="tp-sosial"></div>
+{% endblock %}
+
+{% block script %}
+<script>
+async function muatProfilToko() {
+    try {
+        const [resProfil, resProduk, resTestimoni] = await Promise.all([
+            fetch("/profil-toko"),
+            fetch("/produk/?limit=200"),
+            fetch("/testimoni"),
+        ]);
+
+        const profil = await resProfil.json();
+        const produkList = resProduk.ok ? await resProduk.json() : [];
+        const testimoniList = resTestimoni.ok ? await resTestimoni.json() : [];
+
+        renderHero(profil);
+        renderInfoBar(profil);
+        renderCta(profil);
+        renderTentang(profil);
+        renderMenu(produkList);
+        renderPeta(profil);
+        renderTestimoni(testimoniList);
+        renderSosial(profil);
+    } catch (err) {
+        document.getElementById("tp-hero").innerHTML = "<p style='padding:2rem;'>Gagal memuat halaman profil toko.</p>";
+    }
+}
+
+function renderHero(profil) {
+    const el = document.getElementById("tp-hero");
+    const bannerHtml = profil.banner_url
+        ? `<img src="${escapeHtml(profil.banner_url)}" class="tp-hero-banner" alt="">`
+        : "";
+    const logoHtml = profil.logo_url
+        ? `<img src="${escapeHtml(profil.logo_url)}" class="tp-logo" alt="Logo ${escapeHtml(profil.nama_toko)}">`
+        : "";
+
+    el.innerHTML = `
+        ${bannerHtml}
+        <div class="tp-hero-overlay">
+            ${logoHtml}
+            <div class="tp-nama-toko">${escapeHtml(profil.nama_toko)}</div>
+            ${profil.tagline ? `<div class="tp-tagline">${escapeHtml(profil.tagline)}</div>` : ""}
+        </div>
+    `;
+}
+
+function renderInfoBar(profil) {
+    const el = document.getElementById("tp-info-bar");
+    let html = profil.is_buka
+        ? `<span class="tp-status-pill tp-status-buka">🟢 Buka Sekarang</span>`
+        : `<span class="tp-status-pill tp-status-tutup">🔴 Tutup</span>`;
+
+    if (profil.jam_operasional) {
+        html += `<span class="tp-info-chip">🕒 ${escapeHtml(profil.jam_operasional)}</span>`;
+    }
+    if (profil.kontak_wa) {
+        html += `<span class="tp-info-chip">📱 ${escapeHtml(profil.kontak_wa)}</span>`;
+    }
+    el.innerHTML = html;
+}
+
+function renderCta(profil) {
+    const el = document.getElementById("tp-cta-row");
+    const nomorBersih = (profil.kontak_wa || "").replace(/[^0-9]/g, "");
+    let html = "";
+
+    if (nomorBersih) {
+        const pesan = encodeURIComponent(`Halo ${profil.nama_toko}, saya mau pesan.`);
+        html += `<a href="https://wa.me/${nomorBersih}?text=${pesan}" target="_blank" rel="noopener" class="tp-cta-wa">💬 Pesan Sekarang via WhatsApp</a>`;
+    }
+
+    const linkDelivery = [
+        profil.gofood_url ? { label: "🟢 GoFood", url: profil.gofood_url } : null,
+        profil.grabfood_url ? { label: "🟩 GrabFood", url: profil.grabfood_url } : null,
+        profil.shopeefood_url ? { label: "🧡 ShopeeFood", url: profil.shopeefood_url } : null,
+    ].filter(Boolean);
+
+    if (linkDelivery.length) {
+        html += `<div class="tp-cta-delivery">${linkDelivery
+            .map((l) => `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${l.label}</a>`)
+            .join("")}</div>`;
+    }
+
+    el.innerHTML = html;
+}
+
+function renderTentang(profil) {
+    const el = document.getElementById("tp-tentang");
+    if (!profil.deskripsi) { el.innerHTML = ""; return; }
+    el.innerHTML = `
+        <div class="tp-tentang">
+            <h2>Tentang Kami</h2>
+            <p>${escapeHtml(profil.deskripsi)}</p>
+        </div>
+    `;
+}
+
+function renderMenu(produkList) {
+    const el = document.getElementById("tp-menu");
+    if (!produkList.length) { el.innerHTML = ""; return; }
+
+    const grup = {};
+    for (const p of produkList) {
+        const kategori = p.kategori && p.kategori.trim() ? p.kategori : "Menu Lainnya";
+        if (!grup[kategori]) grup[kategori] = [];
+        grup[kategori].push(p);
+    }
+
+    let html = `<h2 class="tp-section-title">🍜 Menu &amp; Harga</h2>`;
+    for (const kategori of Object.keys(grup)) {
+        html += `<div class="tp-menu-kategori"><h3>${escapeHtml(kategori)}</h3><div class="produk-grid">`;
+        for (const p of grup[kategori]) {
+            const foto = p.gambar_url
+                ? `<img src="${escapeHtml(p.gambar_url)}" alt="${escapeHtml(p.nama)}">`
+                : `<div class="produk-placeholder">🥣</div>`;
+            html += `
+            <div class="produk-card">
+                <a href="/menu/${p.id}" class="produk-link">
+                    <div class="produk-media">
+                        ${foto}
+                        <span class="harga-stamp">Rp${p.harga.toLocaleString("id-ID")}</span>
+                    </div>
+                    <div class="produk-info">
+                        <h3>${escapeHtml(p.nama)}</h3>
+                        <p class="deskripsi">${escapeHtml(p.deskripsi || "")}</p>
+                    </div>
+                </a>
+                <div class="produk-aksi">
+                    <button onclick="tambahKeKeranjang(${p.id})" ${p.stok === 0 ? "disabled" : ""}>
+                        ${p.stok === 0 ? "Habis" : "+ Keranjang"}
+                    </button>
+                </div>
+            </div>`;
+        }
+        html += `</div></div>`;
+    }
+    el.innerHTML = html;
+}
+
+function renderPeta(profil) {
+    const el = document.getElementById("tp-peta");
+    if (!profil.alamat && !profil.maps_embed_url) { el.innerHTML = ""; return; }
+
+    let html = `<h2 class="tp-section-title">📍 Lokasi Toko</h2><div class="tp-peta-wrap">`;
+    if (profil.maps_embed_url) {
+        html += `<iframe src="${escapeHtml(profil.maps_embed_url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    }
+    if (profil.alamat) {
+        html += `<p class="tp-alamat-teks">${escapeHtml(profil.alamat)}</p>`;
+    }
+    html += `</div>`;
+    el.innerHTML = html;
+}
+
+function renderTestimoni(testimoniList) {
+    const el = document.getElementById("tp-testimoni");
+    if (!testimoniList.length) { el.innerHTML = ""; return; }
+
+    let html = `<h2 class="tp-section-title">💬 Kata Pelanggan</h2><div class="tp-testimoni-grid">`;
+    for (const t of testimoniList) {
+        const bintang = "★".repeat(t.rating) + "☆".repeat(5 - t.rating);
+        const fotoHtml = t.foto_url
+            ? `<img src="${escapeHtml(t.foto_url)}" alt="" style="width:100%; border-radius:8px; margin-bottom:0.6rem; display:block;">`
+            : "";
+        html += `
+        <div class="tp-testimoni-card">
+            ${fotoHtml}
+            <div class="tp-testimoni-rating">${bintang}</div>
+            <p class="tp-testimoni-ulasan">"${escapeHtml(t.ulasan)}"</p>
+            <p class="tp-testimoni-nama">— ${escapeHtml(t.nama_pelanggan)}</p>
+        </div>`;
+    }
+    html += `</div>`;
+    el.innerHTML = html;
+}
+
+function renderSosial(profil) {
+    const el = document.getElementById("tp-sosial");
+    const items = [
+        profil.instagram_url ? { icon: "📸", url: profil.instagram_url, label: "Instagram" } : null,
+        profil.tiktok_url ? { icon: "🎵", url: profil.tiktok_url, label: "TikTok" } : null,
+        profil.facebook_url ? { icon: "📘", url: profil.facebook_url, label: "Facebook" } : null,
+    ].filter(Boolean);
+
+    if (!items.length) { el.innerHTML = ""; return; }
+
+    el.innerHTML = `<div class="tp-sosial-row">${items
+        .map((i) => `<a href="${escapeHtml(i.url)}" target="_blank" rel="noopener" aria-label="${i.label}">${i.icon}</a>`)
+        .join("")}</div>`;
+}
+
+muatProfilToko();
+</script>
+{% endblock %}
