@@ -283,11 +283,20 @@ document.getElementById("profil-toko-form").addEventListener("submit", async (e)
             const err = await res.json();
             throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan profil toko");
         }
+    } catch (err) {
+        // Ini nangkep kegagalan SIMPAN aja (upload foto / PUT profil-toko).
+        msg.textContent = err.message || "Gagal menyimpan profil toko";
+        return;
+    }
 
-        showToast("Profil toko berhasil disimpan!");
+    // Data sudah pasti kesimpen di titik ini. Muat ulang form itu langkah terpisah —
+    // kalau ini yang gagal (mis. koneksi ke server sempat putus), jangan sampai kelihatan
+    // seperti simpannya yang gagal.
+    showToast("Profil toko berhasil disimpan!");
+    try {
         await muatProfilToko();
     } catch (err) {
-        msg.textContent = err.message || "Gagal menyimpan profil toko";
+        msg.textContent = "Tersimpan, tapi gagal memuat ulang form. Refresh halaman ini manual buat lihat datanya.";
     }
 });
 
@@ -359,15 +368,20 @@ document.getElementById("tambah-testimoni-form").addEventListener("submit", asyn
             const err = await res.json();
             throw new Error(formatErrorDetail(err.detail) || "Gagal menambah testimoni");
         }
-
-        showToast("Testimoni berhasil ditambahkan!");
-        e.target.reset();
-        document.getElementById("tt-foto-preview").style.display = "none";
-        document.getElementById("tt-rating").value = 5;
-        document.getElementById("tt-ditampilkan").checked = true;
-        await muatDaftarTestimoni();
     } catch (err) {
         msg.textContent = err.message || "Gagal menambah testimoni";
+        return;
+    }
+
+    showToast("Testimoni berhasil ditambahkan!");
+    e.target.reset();
+    document.getElementById("tt-foto-preview").style.display = "none";
+    document.getElementById("tt-rating").value = 5;
+    document.getElementById("tt-ditampilkan").checked = true;
+    try {
+        await muatDaftarTestimoni();
+    } catch (err) {
+        msg.textContent = "Tersimpan, tapi gagal memuat ulang daftar. Refresh halaman ini manual.";
     }
 });
 
@@ -425,12 +439,17 @@ async function simpanEditTestimoni() {
             const err = await res.json();
             throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan perubahan");
         }
-
-        showToast("Testimoni berhasil diperbarui!");
-        tutupEditTestimoni();
-        await muatDaftarTestimoni();
     } catch (err) {
         showToast(err.message || "Gagal menyimpan perubahan", "error");
+        return;
+    }
+
+    showToast("Testimoni berhasil diperbarui!");
+    tutupEditTestimoni();
+    try {
+        await muatDaftarTestimoni();
+    } catch (err) {
+        showToast("Tersimpan, tapi gagal memuat ulang daftar. Refresh halaman ini manual.", "error");
     }
 }
 
