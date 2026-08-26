@@ -138,6 +138,19 @@
 const token = localStorage.getItem("access_token");
 let TESTIMONI_CACHE = [];
 
+// FastAPI kirim error validasi (422) sebagai LIST of object, bukan string —
+// sebelumnya ini bikin pesan error asli ketelen dan cuma muncul teks generik.
+function formatErrorDetail(detail) {
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+        return detail.map((d) => {
+            const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : "";
+            return field ? `${field}: ${d.msg}` : d.msg;
+        }).join("; ");
+    }
+    return null;
+}
+
 async function cekAdmin() {
     const checkDiv = document.getElementById("admin-check");
     if (!token) {
@@ -171,7 +184,7 @@ async function uploadGambarToko(fileInputEl) {
 
     if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || "Gagal upload gambar");
+        throw new Error(formatErrorDetail(err.detail) || "Gagal upload gambar");
     }
     const data = await res.json();
     return data.url;
@@ -268,7 +281,7 @@ document.getElementById("profil-toko-form").addEventListener("submit", async (e)
 
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menyimpan profil toko");
+            throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan profil toko");
         }
 
         showToast("Profil toko berhasil disimpan!");
@@ -344,7 +357,7 @@ document.getElementById("tambah-testimoni-form").addEventListener("submit", asyn
 
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menambah testimoni");
+            throw new Error(formatErrorDetail(err.detail) || "Gagal menambah testimoni");
         }
 
         showToast("Testimoni berhasil ditambahkan!");
@@ -410,7 +423,7 @@ async function simpanEditTestimoni() {
 
         if (!res.ok) {
             const err = await res.json();
-            throw new Error(typeof err.detail === "string" ? err.detail : "Gagal menyimpan perubahan");
+            throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan perubahan");
         }
 
         showToast("Testimoni berhasil diperbarui!");
