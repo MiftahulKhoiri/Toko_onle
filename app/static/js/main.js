@@ -37,7 +37,7 @@ async function renderNavAuth() {
 
         let html = "";
         if (user.is_admin) {
-            html += '<a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a> ';
+            html += '<a href="/panel-admin">Kelola Produk</a> <a href="/panel-admin/pesanan">Kelola Pesanan</a> <a href="/panel-admin/profil-toko">Kelola Profil Toko</a> ';
         }
         html += `<a href="/profil" class="nav-profil">${avatarHtml} ${escapeHtml(user.nama)}`;
         if (user.is_admin) html += ' <span class="badge-admin">Admin</span>';
