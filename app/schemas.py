@@ -1,7 +1,7 @@
 # app/schemas.py
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # ---------- Produk ----------
@@ -162,3 +162,101 @@ class OrderResponse(BaseModel):
     items: List[OrderItemResponse] = []
     user: Optional[UserResponse] = None
     alamat: Optional[AlamatResponse] = None
+
+
+# ---------- Profil Toko ----------
+def _cek_format_url(v: Optional[str]) -> Optional[str]:
+    if v is None or v == "":
+        return None
+    v = v.strip()
+    if not (v.startswith("http://") or v.startswith("https://")):
+        raise ValueError("URL harus diawali dengan http:// atau https://")
+    return v
+
+
+class ProfilTokoBase(BaseModel):
+    nama_toko: str = Field(..., min_length=1, max_length=100)
+    tagline: Optional[str] = Field(None, max_length=150)
+    deskripsi: Optional[str] = Field(None, max_length=1000)
+    alamat: Optional[str] = Field(None, max_length=500)
+    maps_embed_url: Optional[str] = None
+    jam_operasional: Optional[str] = Field(None, max_length=100)
+    is_buka: bool = True
+    kontak_wa: Optional[str] = Field(None, max_length=20)
+    logo_url: Optional[str] = None
+    banner_url: Optional[str] = None
+    gofood_url: Optional[str] = None
+    grabfood_url: Optional[str] = None
+    shopeefood_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+
+    @field_validator(
+        "maps_embed_url", "gofood_url", "grabfood_url", "shopeefood_url",
+        "instagram_url", "tiktok_url", "facebook_url",
+    )
+    @classmethod
+    def _validasi_url(cls, v):
+        return _cek_format_url(v)
+
+
+class ProfilTokoUpdate(BaseModel):
+    nama_toko: Optional[str] = Field(None, min_length=1, max_length=100)
+    tagline: Optional[str] = Field(None, max_length=150)
+    deskripsi: Optional[str] = Field(None, max_length=1000)
+    alamat: Optional[str] = Field(None, max_length=500)
+    maps_embed_url: Optional[str] = None
+    jam_operasional: Optional[str] = Field(None, max_length=100)
+    is_buka: Optional[bool] = None
+    kontak_wa: Optional[str] = Field(None, max_length=20)
+    logo_url: Optional[str] = None
+    banner_url: Optional[str] = None
+    gofood_url: Optional[str] = None
+    grabfood_url: Optional[str] = None
+    shopeefood_url: Optional[str] = None
+    instagram_url: Optional[str] = None
+    tiktok_url: Optional[str] = None
+    facebook_url: Optional[str] = None
+
+    @field_validator(
+        "maps_embed_url", "gofood_url", "grabfood_url", "shopeefood_url",
+        "instagram_url", "tiktok_url", "facebook_url",
+    )
+    @classmethod
+    def _validasi_url(cls, v):
+        return _cek_format_url(v)
+
+
+class ProfilTokoResponse(ProfilTokoBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+# ---------- Testimoni ----------
+class TestimoniBase(BaseModel):
+    nama_pelanggan: str = Field(..., min_length=1, max_length=100)
+    rating: int = Field(..., ge=1, le=5)
+    ulasan: str = Field(..., min_length=1, max_length=500)
+    foto_url: Optional[str] = None
+    ditampilkan: bool = True
+
+
+class TestimoniCreate(TestimoniBase):
+    pass
+
+
+class TestimoniUpdate(BaseModel):
+    nama_pelanggan: Optional[str] = Field(None, min_length=1, max_length=100)
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    ulasan: Optional[str] = Field(None, min_length=1, max_length=500)
+    foto_url: Optional[str] = None
+    ditampilkan: Optional[bool] = None
+
+
+class TestimoniResponse(TestimoniBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
