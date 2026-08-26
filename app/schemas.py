@@ -182,7 +182,7 @@ def _cek_format_url(v: Optional[str]) -> Optional[str]:
 class ProfilTokoBase(BaseModel):
     nama_toko: str = Field(..., min_length=1, max_length=100)
     tagline: Optional[str] = Field(None, max_length=150)
-    deskripsi: Optional[str] = Field(None, max_length=1000)
+    deskripsi: Optional[str] = Field(None, max_length=3000)
     alamat: Optional[str] = Field(None, max_length=500)
     maps_embed_url: Optional[str] = None
     jam_operasional: Optional[str] = Field(None, max_length=100)
@@ -209,7 +209,7 @@ class ProfilTokoBase(BaseModel):
 class ProfilTokoUpdate(BaseModel):
     nama_toko: Optional[str] = Field(None, min_length=1, max_length=100)
     tagline: Optional[str] = Field(None, max_length=150)
-    deskripsi: Optional[str] = Field(None, max_length=1000)
+    deskripsi: Optional[str] = Field(None, max_length=3000)
     alamat: Optional[str] = Field(None, max_length=500)
     maps_embed_url: Optional[str] = None
     jam_operasional: Optional[str] = Field(None, max_length=100)
