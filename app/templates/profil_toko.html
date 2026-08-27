@@ -17,7 +17,7 @@
 async function muatProfilToko() {
     try {
         const [resProfil, resProduk, resTestimoni] = await Promise.all([
-            fetch("/profil-toko"),
+            fetch("/api/profil-toko"),
             fetch("/produk/?limit=200"),
             fetch("/testimoni"),
         ]);
