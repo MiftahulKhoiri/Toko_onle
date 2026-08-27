@@ -260,8 +260,18 @@ class TestimoniUpdate(BaseModel):
     ditampilkan: Optional[bool] = None
 
 
+class TestimoniKirim(BaseModel):
+    """Skema ulasan yang dikirim PEMBELI sendiri (bukan admin) — sengaja nggak ada
+    nama_pelanggan/ditampilkan di sini, dua-duanya ditentukan server: nama_pelanggan
+    diambil dari akun yang login, ditampilkan dipaksa False sampai admin approve."""
+    rating: int = Field(..., ge=1, le=5)
+    ulasan: str = Field(..., min_length=1, max_length=500)
+    foto_url: Optional[str] = None
+
+
 class TestimoniResponse(TestimoniBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    user_id: Optional[int] = None
     created_at: datetime
