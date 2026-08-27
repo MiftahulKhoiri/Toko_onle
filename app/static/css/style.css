@@ -392,3 +392,35 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
     .tp-nama-toko { font-size: 1.3rem; }
     .tp-hero { min-height: 180px; }
 }
+
+/* ==================== Kirim Ulasan Pembeli (halaman publik) ==================== */
+.tp-kirim-box { background: var(--santan); border-radius: 12px; padding: 1.2rem 1.3rem; margin-bottom: 1.8rem; box-shadow: 0 3px 10px rgba(43,29,20,0.1); }
+.tp-kirim-hint { font-size: 0.88rem; color: #5c4d3d; }
+.tp-kirim-hint a { color: var(--cabai); font-weight: 600; }
+
+.tp-rating-picker { display: flex; gap: 0.3rem; margin-bottom: 0.9rem; }
+.tp-rating-picker span { cursor: pointer; color: #ddd; font-size: 2rem; line-height: 1; user-select: none; transition: color 0.15s; }
+.tp-rating-picker span.aktif { color: #E8A93A; }
+
+.tp-kirim-box textarea,
+.tp-kirim-box input[type="file"] {
+    width: 100%; box-sizing: border-box; padding: 0.7rem 0.85rem; border-radius: 10px;
+    border: 1.5px solid #e3d7c0; background: var(--kertas); font-family: inherit; font-size: 0.9rem;
+    margin-bottom: 0.6rem;
+}
+#tp-kirim-foto-preview { display: none; max-width: 140px; border-radius: 8px; margin-bottom: 0.6rem; }
+.tp-kirim-foto-label { display: block; font-size: 0.85rem; color: #6b5a49; margin: 0.2rem 0 0.4rem; }
+
+.tp-kirim-box button[type="submit"] {
+    background: var(--cabai); color: white; border: none; padding: 0.75rem 1.4rem; border-radius: 10px;
+    font-weight: 700; cursor: pointer; font-size: 0.92rem;
+}
+.tp-kirim-box button[type="submit"]:hover { background: var(--cabai-tua); }
+
+.tp-kirim-sukses { color: var(--daun); font-size: 0.88rem; margin-top: 0.7rem; font-weight: 600; }
+.tp-kirim-error { color: var(--cabai-tua); font-size: 0.88rem; margin-top: 0.7rem; }
+
+.tp-testimoni-badge {
+    background: #e3ecd9; color: var(--daun); font-size: 0.66rem; font-weight: 700;
+    padding: 0.15rem 0.5rem; border-radius: 999px; margin-left: 0.4rem; vertical-align: middle;
+}
