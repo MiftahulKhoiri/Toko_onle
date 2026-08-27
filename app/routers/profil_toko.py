@@ -19,15 +19,18 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db
-from app.dependencies import get_current_admin
+from app.dependencies import get_current_admin, get_current_user
+from app.rate_limit import batasi_percobaan
 
 router = APIRouter(tags=["profil_toko"])
 
 UPLOAD_DIR_TOKO = "app/static/img/toko"
+UPLOAD_DIR_TESTIMONI = "app/static/img/testimoni"
 EKSTENSI_DIIZINKAN = {".jpg", ".jpeg", ".png", ".webp"}
 UKURAN_MAKS = 5 * 1024 * 1024  # 5MB
 
 os.makedirs(UPLOAD_DIR_TOKO, exist_ok=True)
+os.makedirs(UPLOAD_DIR_TESTIMONI, exist_ok=True)
 
 
 def _get_or_create_profil(db: Session) -> models.ProfilToko:
@@ -67,7 +70,7 @@ async def upload_gambar_toko(
     file: UploadFile = File(...),
     _: models.User = Depends(get_current_admin),
 ):
-    """Dipakai bareng buat logo, banner, dan foto testimoni — biar nggak dobel-dobel endpoint upload."""
+    """Dipakai bareng buat logo, banner — biar nggak dobel-dobel endpoint upload."""
     ekstensi = os.path.splitext(file.filename or "")[1].lower()
     if ekstensi not in EKSTENSI_DIIZINKAN:
         raise HTTPException(
@@ -154,3 +157,54 @@ def hapus_testimoni(
     db.delete(testimoni)
     db.commit()
     return None
+
+
+@router.post("/testimoni/upload-foto")
+async def upload_foto_testimoni_pembeli(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Upload foto produk buat dilampirkan ke ulasan — siapa aja yang LOGIN boleh (bukan cuma
+    admin), disimpan folder terpisah dari aset toko biar rapi."""
+    ekstensi = os.path.splitext(file.filename or "")[1].lower()
+    if ekstensi not in EKSTENSI_DIIZINKAN:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Format foto harus jpg, jpeg, png, atau webp",
+        )
+
+    isi_file = await file.read()
+    if len(isi_file) > UKURAN_MAKS:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 5MB")
+
+    nama_file = f"{uuid.uuid4().hex}{ekstensi}"
+    with open(os.path.join(UPLOAD_DIR_TESTIMONI, nama_file), "wb") as f:
+        f.write(isi_file)
+
+    return {"url": f"/static/img/testimoni/{nama_file}"}
+
+
+@router.post("/testimoni/kirim", response_model=schemas.TestimoniResponse, status_code=status.HTTP_201_CREATED)
+def kirim_testimoni(
+    data: schemas.TestimoniKirim,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    """Ulasan asli dari pembeli yang login (bukan admin). Nama diambil dari akunnya sendiri
+    (nggak dipercaya dari input, biar nggak bisa nyamar jadi orang lain), dan otomatis
+    disembunyikan (ditampilkan=False) sampai admin cek & setujui lewat panel Kelola Profil Toko —
+    biar nggak asal tampil kalau ada yang iseng/spam."""
+    batasi_percobaan(f"testimoni:{current_user.id}", maks=3, jendela_detik=86400)
+
+    testimoni = models.Testimoni(
+        nama_pelanggan=current_user.nama,
+        rating=data.rating,
+        ulasan=data.ulasan,
+        foto_url=data.foto_url,
+        ditampilkan=False,
+        user_id=current_user.id,
+    )
+    db.add(testimoni)
+    db.commit()
+    db.refresh(testimoni)
+    return testimoni
