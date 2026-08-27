@@ -3,6 +3,10 @@
 Endpoint buat Profil Toko (halaman landing publik yang dibuka lewat klik logo di navbar)
 dan Testimoni pelanggan yang ditampilkan di halaman itu.
 
+Jalur JSON API dipisah ke prefix /api/... supaya nggak nabrak sama route halaman HTML
+publik "/profil-toko" yang didaftarkan di pages.py — dulu keduanya sama-sama pakai
+"/profil-toko" dan bikin halaman HTML-nya "menang" atas data JSON.
+
 ProfilToko cuma punya 1 baris data (semacam "pengaturan toko") — dibuat otomatis kalau
 belum ada, mirip pola _get_or_create_cart di keranjang.py.
 """
@@ -38,12 +42,12 @@ def _get_or_create_profil(db: Session) -> models.ProfilToko:
 
 # ---------- Profil Toko ----------
 
-@router.get("/profil-toko", response_model=schemas.ProfilTokoResponse)
+@router.get("/api/profil-toko", response_model=schemas.ProfilTokoResponse)
 def get_profil_toko(db: Session = Depends(get_db)):
     return _get_or_create_profil(db)
 
 
-@router.put("/profil-toko", response_model=schemas.ProfilTokoResponse)
+@router.put("/api/profil-toko", response_model=schemas.ProfilTokoResponse)
 def update_profil_toko(
     data: schemas.ProfilTokoUpdate,
     db: Session = Depends(get_db),
@@ -58,7 +62,7 @@ def update_profil_toko(
     return profil
 
 
-@router.post("/profil-toko/upload-gambar")
+@router.post("/api/profil-toko/upload-gambar")
 async def upload_gambar_toko(
     file: UploadFile = File(...),
     _: models.User = Depends(get_current_admin),
@@ -83,6 +87,7 @@ async def upload_gambar_toko(
 
 
 # ---------- Testimoni ----------
+# (tidak dipindah ke /api/ — path "/testimoni" nggak punya route halaman HTML yang nabrak)
 
 @router.get("/testimoni", response_model=List[schemas.TestimoniResponse])
 def list_testimoni_publik(db: Session = Depends(get_db)):
