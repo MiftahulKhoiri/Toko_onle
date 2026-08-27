@@ -311,6 +311,7 @@ async function muatDaftarTestimoni() {
         <table class="keranjang-table" style="width:100%; border-collapse:collapse;">
             <tr>
                 <th>Pelanggan</th>
+                <th>Sumber</th>
                 <th>Rating</th>
                 <th>Ulasan</th>
                 <th>Tampil?</th>
@@ -319,8 +320,10 @@ async function muatDaftarTestimoni() {
 
     for (const t of list) {
         const bintang = "★".repeat(t.rating) + "☆".repeat(5 - t.rating);
+        const sumber = t.user_id ? "🧑 Pembeli" : "👤 Admin";
         html += `<tr>
             <td><strong>${escapeHtml(t.nama_pelanggan)}</strong></td>
+            <td>${sumber}</td>
             <td>${bintang}</td>
             <td style="max-width:220px;">${escapeHtml(t.ulasan)}</td>
             <td>${t.ditampilkan ? "✅" : "🚫"}</td>
