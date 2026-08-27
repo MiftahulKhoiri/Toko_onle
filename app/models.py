@@ -135,6 +135,9 @@ class Testimoni(Base):
     nama_pelanggan = Column(String(100), nullable=False)
     rating = Column(Integer, nullable=False, default=5)
     ulasan = Column(Text, nullable=False)
-    foto_url = Column(String(255), nullable=True)  # opsional: screenshot ulasan
+    foto_url = Column(String(255), nullable=True)  # opsional: screenshot ulasan, atau foto produk dari pembeli
     ditampilkan = Column(Boolean, default=True)  # admin bisa sembunyikan tanpa hapus
+    # NULL = testimoni ditambah manual oleh admin. Terisi = ulasan asli dari pembeli yang login,
+    # lewat POST /testimoni/kirim — otomatis ditampilkan=False sampai admin approve.
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
