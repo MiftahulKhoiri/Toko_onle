@@ -55,6 +55,13 @@ for (user_id, nama, jalan, kel, kec, kota, prov, kodepos) in users_dengan_alamat
         """, (user_id, jalan, kel, kec, kota, prov, kodepos))
         print(f"✓ Alamat lama milik {nama} dipindah ke daftar alamat baru")
 
+# 5. Tambah kolom user_id ke testimoni (buat fitur "kirim ulasan sendiri" oleh pembeli)
+try:
+    cur.execute("ALTER TABLE testimoni ADD COLUMN user_id INTEGER REFERENCES users(id)")
+    print("✓ Kolom 'user_id' ditambahkan ke tabel 'testimoni'")
+except sqlite3.OperationalError as e:
+    print(f"- Lewati 'user_id' di testimoni: {e}")
+
 conn.commit()
 conn.close()
 print("Selesai. Boleh hapus file ini setelah dijalankan.")
