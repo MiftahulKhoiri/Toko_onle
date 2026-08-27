@@ -176,7 +176,7 @@ async function uploadGambarToko(fileInputEl) {
     const formData = new FormData();
     formData.append("file", fileInputEl.files[0]);
 
-    const res = await fetch("/profil-toko/upload-gambar", {
+    const res = await fetch("/api/profil-toko/upload-gambar", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -206,7 +206,7 @@ pratinjauFile(document.getElementById("tt-foto-file"), document.getElementById("
 pratinjauFile(document.getElementById("edit-tt-foto-file"), document.getElementById("edit-tt-foto-preview"));
 
 async function muatProfilToko() {
-    const res = await fetch("/profil-toko");
+    const res = await fetch("/api/profil-toko");
     const profil = await res.json();
 
     document.getElementById("pt-nama").value = profil.nama_toko || "";
@@ -273,7 +273,7 @@ document.getElementById("profil-toko-form").addEventListener("submit", async (e)
             facebook_url: document.getElementById("pt-fb").value || null,
         };
 
-        const res = await fetch("/profil-toko", {
+        const res = await fetch("/api/profil-toko", {
             method: "PUT",
             headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             body: JSON.stringify(payload),
@@ -284,14 +284,10 @@ document.getElementById("profil-toko-form").addEventListener("submit", async (e)
             throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan profil toko");
         }
     } catch (err) {
-        // Ini nangkep kegagalan SIMPAN aja (upload foto / PUT profil-toko).
         msg.textContent = err.message || "Gagal menyimpan profil toko";
         return;
     }
 
-    // Data sudah pasti kesimpen di titik ini. Muat ulang form itu langkah terpisah —
-    // kalau ini yang gagal (mis. koneksi ke server sempat putus), jangan sampai kelihatan
-    // seperti simpannya yang gagal.
     showToast("Profil toko berhasil disimpan!");
     try {
         await muatProfilToko();
