@@ -109,6 +109,7 @@
 const token = localStorage.getItem("access_token");
 const PER_HALAMAN = 10;
 let halamanProduk = 1;
+let PRODUK_CACHE = [];
 
 async function uploadFoto(fileInputEl) {
     if (!fileInputEl.files || !fileInputEl.files[0]) return null;
@@ -172,6 +173,7 @@ async function muatProduk() {
     const skip = (halamanProduk - 1) * PER_HALAMAN;
     const res = await fetch(`/produk/?skip=${skip}&limit=${PER_HALAMAN}`);
     const produkList = await res.json();
+    PRODUK_CACHE = produkList;
 
     if (!produkList.length && halamanProduk > 1) {
         halamanProduk -= 1;
@@ -196,7 +198,7 @@ async function muatProduk() {
 
     for (const p of produkList) {
         const fotoHtml = p.gambar_url
-            ? `<img src="${p.gambar_url}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">`
+            ? `<img src="${escapeHtml(p.gambar_url)}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">`
             : '❌';
 
         let statusBadge = p.is_po
@@ -205,12 +207,12 @@ async function muatProduk() {
 
         html += `<tr>
             <td style="text-align:center;">${fotoHtml}</td>
-            <td><strong>${p.nama}</strong><br><small style="color:#666;">${p.kategori || '-'}</small></td>
+            <td><strong>${escapeHtml(p.nama)}</strong><br><small style="color:#666;">${escapeHtml(p.kategori || '-')}</small></td>
             <td>Rp${p.harga.toLocaleString("id-ID")}</td>
             <td>${p.stok}</td>
             <td>${statusBadge}</td>
             <td>
-                <button onclick='bukaEditModal(${JSON.stringify(p)})'>✏️ Edit</button>
+                <button onclick="bukaEditModal(${p.id})">✏️ Edit</button>
                 <button onclick="hapusProduk(${p.id})" style="background:#dc3545; color: white;">🗑️ Hapus</button>
             </td>
         </tr>`;
@@ -233,7 +235,10 @@ function gantiHalamanProduk(arah) {
     muatProduk();
 }
 
-function bukaEditModal(p) {
+function bukaEditModal(id) {
+    const p = PRODUK_CACHE.find((x) => x.id === id);
+    if (!p) return;
+
     document.getElementById("edit-id").value = p.id;
     document.getElementById("edit-nama").value = p.nama;
     document.getElementById("edit-deskripsi").value = p.deskripsi || "";
@@ -294,7 +299,8 @@ async function simpanEditProduk() {
         tutupEditModal();
         muatProduk();
     } else {
-        showToast("Gagal memperbarui produk", "error");
+        const err = await res.json();
+        showToast(formatErrorDetail(err.detail) || "Gagal memperbarui produk", "error");
     }
 }
 
@@ -345,7 +351,7 @@ document.getElementById("tambah-produk-form").addEventListener("submit", async (
 
     if (!res.ok) {
         const err = await res.json();
-        msg.textContent = err.detail || "Gagal menambah produk";
+        msg.textContent = formatErrorDetail(err.detail) || "Gagal menambah produk";
         return;
     }
 
