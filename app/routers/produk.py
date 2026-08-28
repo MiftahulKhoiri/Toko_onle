@@ -4,6 +4,7 @@ import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -57,14 +58,44 @@ async def upload_foto(
 @router.get("/", response_model=List[schemas.ProdukResponse])
 def list_produk(
     kategori: Optional[str] = None,
+    urutan: str = "semua",
     skip: int = 0,
     limit: int = 200,
     db: Session = Depends(get_db),
 ):
+    """
+    urutan:
+      - "semua"   -> urutan katalog apa adanya (id ascending)
+      - "terbaru" -> produk yang baru ditambahkan duluan (created_at descending)
+      - "terlaris" -> dihitung dari total jumlah terjual di pesanan yang statusnya
+                      sudah lewat pembayaran (dibayar/diproses/selesai). Produk yang
+                      belum pernah laku tetap ikut tampil, di urutan paling belakang.
+    """
     query = db.query(models.Produk)
     if kategori:
         query = query.filter(models.Produk.kategori == kategori)
-    return query.order_by(models.Produk.id.desc()).offset(skip).limit(limit).all()
+
+    if urutan == "terlaris":
+        subq = (
+            db.query(
+                models.OrderItem.produk_id.label("produk_id"),
+                func.sum(models.OrderItem.jumlah).label("total_terjual"),
+            )
+            .join(models.Order, models.OrderItem.order_id == models.Order.id)
+            .filter(models.Order.status.in_(["dibayar", "diproses", "selesai"]))
+            .group_by(models.OrderItem.produk_id)
+            .subquery()
+        )
+        query = query.outerjoin(subq, models.Produk.id == subq.c.produk_id).order_by(
+            func.coalesce(subq.c.total_terjual, 0).desc(),
+            models.Produk.id.desc(),
+        )
+    elif urutan == "terbaru":
+        query = query.order_by(models.Produk.created_at.desc())
+    else:
+        query = query.order_by(models.Produk.id.asc())
+
+    return query.offset(skip).limit(limit).all()
 
 
 @router.get("/{produk_id}", response_model=schemas.ProdukResponse)
@@ -125,9 +156,6 @@ def delete_produk(
     if not db_produk:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produk tidak ditemukan")
 
-    # Kalau produk ini sudah pernah masuk keranjang/pesanan siapa pun, jangan dihapus permanen —
-    # bisa bikin item pesanan lama "yatim" (produk_id nunjuk ke baris yang udah nggak ada) dan
-    # error pas checkout kalau kebetulan masih ada di keranjang aktif orang lain.
     pernah_dipesan = (
         db.query(models.OrderItem).filter(models.OrderItem.produk_id == produk_id).first()
     )
