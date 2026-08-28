@@ -40,10 +40,10 @@ function renderPilihan() {
             <input type="radio" name="alamat" value="${a.id}" ${checked ? "checked" : ""} onchange="pilihAlamat(${a.id})">
             <div class="alamat-card-isi">
                 <div class="alamat-card-atas">
-                    <strong>${a.label}</strong>
+                    <strong>${escapeHtml(a.label)}</strong>
                     ${a.is_default ? '<span class="badge-utama">Utama</span>' : ""}
                 </div>
-                <p>${[a.alamat_jalan, a.kelurahan, a.kecamatan, a.kota, a.provinsi, a.kode_pos].filter(Boolean).join(", ")}</p>
+                <p>${escapeHtml([a.alamat_jalan, a.kelurahan, a.kecamatan, a.kota, a.provinsi, a.kode_pos].filter(Boolean).join(", "))}</p>
                 <div class="alamat-card-aksi">
                     ${!a.is_default ? `<button type="button" onclick="jadikanUtama(${a.id})">Jadikan Utama</button>` : ""}
                     <button type="button" class="alamat-hapus" onclick="hapusAlamat(${a.id})">Hapus</button>
@@ -124,7 +124,7 @@ async function simpanAlamatBaru() {
 
     if (!res.ok) {
         const err = await res.json();
-        msg.textContent = err.detail || "Gagal menyimpan alamat";
+        msg.textContent = formatErrorDetail(err.detail) || "Gagal menyimpan alamat";
         return;
     }
 
@@ -136,19 +136,27 @@ async function simpanAlamatBaru() {
 }
 
 async function jadikanUtama(id) {
-    await fetch(`/alamat/${id}/utama`, {
+    const res = await fetch(`/alamat/${id}/utama`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res.ok) {
+        showToast("Gagal menjadikan alamat ini utama", "error");
+        return;
+    }
     await muatAlamat();
 }
 
 async function hapusAlamat(id) {
     if (!confirm("Hapus alamat ini?")) return;
-    await fetch(`/alamat/${id}`, {
+    const res = await fetch(`/alamat/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
     });
+    if (!res.ok) {
+        showToast("Gagal menghapus alamat", "error");
+        return;
+    }
     await muatAlamat();
 }
 
@@ -169,7 +177,7 @@ async function lanjutBayar() {
 
     if (!res.ok) {
         const err = await res.json();
-        msg.textContent = err.detail || "Checkout gagal";
+        msg.textContent = formatErrorDetail(err.detail) || "Checkout gagal";
         return;
     }
 
