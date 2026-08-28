@@ -138,18 +138,7 @@
 const token = localStorage.getItem("access_token");
 let TESTIMONI_CACHE = [];
 
-// FastAPI kirim error validasi (422) sebagai LIST of object, bukan string —
-// sebelumnya ini bikin pesan error asli ketelen dan cuma muncul teks generik.
-function formatErrorDetail(detail) {
-    if (typeof detail === "string") return detail;
-    if (Array.isArray(detail)) {
-        return detail.map((d) => {
-            const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : "";
-            return field ? `${field}: ${d.msg}` : d.msg;
-        }).join("; ");
-    }
-    return null;
-}
+// formatErrorDetail() sekarang didefinisikan global di main.js, dipakai di sini juga.
 
 async function cekAdmin() {
     const checkDiv = document.getElementById("admin-check");
@@ -284,10 +273,14 @@ document.getElementById("profil-toko-form").addEventListener("submit", async (e)
             throw new Error(formatErrorDetail(err.detail) || "Gagal menyimpan profil toko");
         }
     } catch (err) {
+        // Ini nangkep kegagalan SIMPAN aja (upload foto / PUT profil-toko).
         msg.textContent = err.message || "Gagal menyimpan profil toko";
         return;
     }
 
+    // Data sudah pasti kesimpen di titik ini. Muat ulang form itu langkah terpisah —
+    // kalau ini yang gagal (mis. koneksi ke server sempat putus), jangan sampai kelihatan
+    // seperti simpannya yang gagal.
     showToast("Profil toko berhasil disimpan!");
     try {
         await muatProfilToko();
