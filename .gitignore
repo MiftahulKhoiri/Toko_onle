@@ -18,6 +18,8 @@ toko.db
 # Foto produk hasil upload (dibuat otomatis, nggak perlu ikut di-commit)
 app/static/img/produk/
 app/static/img/profil/
+app/static/img/toko/
+app/static/img/testimoni/
 
 # OS/editor
 .DS_Store
