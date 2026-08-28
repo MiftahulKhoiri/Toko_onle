@@ -437,3 +437,13 @@ button { font-family: var(--font-body); font-weight: 700; border: none; border-r
     padding: 0.75rem 1.6rem; border-radius: 10px; font-weight: 700; font-size: 0.92rem;
 }
 .tp-menu-btn:hover { background: var(--cabai-tua); }
+
+/* ==================== Tab urutan produk (Semua / Terbaru / Terlaris) ==================== */
+.tab-urutan { display: flex; gap: 0.5rem; margin-bottom: 1rem; overflow-x: auto; padding-bottom: 2px; }
+.tab-urutan button {
+    flex-shrink: 0; background: var(--santan); border: 1.5px solid #e3d7c0; color: #6b5a49;
+    padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+}
+.tab-urutan button.tab-aktif { background: var(--cabai); border-color: var(--cabai); color: white; }
+.tab-urutan button:hover:not(.tab-aktif) { border-color: var(--cabai); color: var(--cabai); }
