@@ -10,7 +10,7 @@
         <label>Email</label>
         <input type="email" id="email" required>
         <label>Password</label>
-        <input type="password" id="password" required minlength="6">
+        <input type="password" id="password" required minlength="8">
         <button type="submit">Daftar</button>
     </form>
     <p id="error-msg" class="error"></p>
@@ -36,7 +36,7 @@ document.getElementById("register-form").addEventListener("submit", async (e) =>
         });
         if (!res.ok) {
             const err = await res.json();
-            errorMsg.textContent = err.detail || "Pendaftaran gagal";
+            errorMsg.textContent = formatErrorDetail(err.detail) || "Pendaftaran gagal";
             return;
         }
         window.location.href = "/login";
