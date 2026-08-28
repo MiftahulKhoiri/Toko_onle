@@ -14,10 +14,9 @@ NAMA_TOKO = "Salome Cakyud"
 
 
 @router.get("/")
-def home(request: Request, db: Session = Depends(get_db)):
-    produk_list = db.query(models.Produk).all()
+def home(request: Request):
     return templates.TemplateResponse(
-        request, "index.html", {"nama_toko": NAMA_TOKO, "produk_list": produk_list}
+        request, "index.html", {"nama_toko": NAMA_TOKO}
     )
 
 
