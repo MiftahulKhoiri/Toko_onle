@@ -28,21 +28,19 @@ function formatErrorDetailTp(detail) {
 
 async function muatProfilToko() {
     try {
-        const [resProfil, resProduk, resTestimoni] = await Promise.all([
+        const [resProfil, resTestimoni] = await Promise.all([
             fetch("/api/profil-toko"),
-            fetch("/produk/?limit=200"),
             fetch("/testimoni"),
         ]);
 
         const profil = await resProfil.json();
-        const produkList = resProduk.ok ? await resProduk.json() : [];
         const testimoniList = resTestimoni.ok ? await resTestimoni.json() : [];
 
         renderHero(profil);
         renderInfoBar(profil);
         renderCta(profil);
         renderTentang(profil);
-        renderMenu(produkList);
+        renderMenu();
         renderPeta(profil);
         renderTestimoni(testimoniList);
         renderSosial(profil);
@@ -121,46 +119,15 @@ function renderTentang(profil) {
     `;
 }
 
-function renderMenu(produkList) {
+function renderMenu() {
     const el = document.getElementById("tp-menu");
-    if (!produkList.length) { el.innerHTML = ""; return; }
-
-    const grup = {};
-    for (const p of produkList) {
-        const kategori = p.kategori && p.kategori.trim() ? p.kategori : "Menu Lainnya";
-        if (!grup[kategori]) grup[kategori] = [];
-        grup[kategori].push(p);
-    }
-
-    let html = `<h2 class="tp-section-title">🍜 Menu &amp; Harga</h2>`;
-    for (const kategori of Object.keys(grup)) {
-        html += `<div class="tp-menu-kategori"><h3>${escapeHtml(kategori)}</h3><div class="produk-grid">`;
-        for (const p of grup[kategori]) {
-            const foto = p.gambar_url
-                ? `<img src="${escapeHtml(p.gambar_url)}" alt="${escapeHtml(p.nama)}">`
-                : `<div class="produk-placeholder">🥣</div>`;
-            html += `
-            <div class="produk-card">
-                <a href="/menu/${p.id}" class="produk-link">
-                    <div class="produk-media">
-                        ${foto}
-                        <span class="harga-stamp">Rp${p.harga.toLocaleString("id-ID")}</span>
-                    </div>
-                    <div class="produk-info">
-                        <h3>${escapeHtml(p.nama)}</h3>
-                        <p class="deskripsi">${escapeHtml(p.deskripsi || "")}</p>
-                    </div>
-                </a>
-                <div class="produk-aksi">
-                    <button onclick="tambahKeKeranjang(${p.id})" ${p.stok === 0 ? "disabled" : ""}>
-                        ${p.stok === 0 ? "Habis" : "+ Keranjang"}
-                    </button>
-                </div>
-            </div>`;
-        }
-        html += `</div></div>`;
-    }
-    el.innerHTML = html;
+    el.innerHTML = `
+        <div class="tp-menu-cta">
+            <h2 class="tp-section-title">🍜 Menu &amp; Harga</h2>
+            <p>Cek semua menu bakso, jajanan, dan minuman kami — lengkap dengan foto dan harga.</p>
+            <a href="/" class="tp-menu-btn">Lihat Menu Lengkap →</a>
+        </div>
+    `;
 }
 
 function renderPeta(profil) {
