@@ -4,6 +4,12 @@
 {% block content %}
 <h1>Menu {{ nama_toko }}</h1>
 
+<div class="tab-urutan" id="tab-urutan">
+    <button type="button" class="tab-aktif" data-urutan="semua" onclick="gantiUrutan('semua')">Semua Produk</button>
+    <button type="button" data-urutan="terbaru" onclick="gantiUrutan('terbaru')">Terbaru</button>
+    <button type="button" data-urutan="terlaris" onclick="gantiUrutan('terlaris')">Terlaris</button>
+</div>
+
 <input
     type="search"
     id="cari-produk"
@@ -13,39 +19,72 @@
     autocomplete="off"
 >
 
-<div class="produk-grid" id="produk-grid">
-    {% for produk in produk_list %}
-    <div class="produk-card" data-cari="{{ (produk.nama ~ ' ' ~ (produk.deskripsi or '') ~ ' ' ~ (produk.kategori or '')) | lower }}">
-        <a href="/menu/{{ produk.id }}" class="produk-link">
-            <div class="produk-media">
-                {% if produk.gambar_url %}
-                <img src="{{ produk.gambar_url }}" alt="{{ produk.nama }}">
-                {% else %}
-                <div class="produk-placeholder">🥣</div>
-                {% endif %}
-                <span class="harga-stamp">Rp{{ "{:,.0f}".format(produk.harga).replace(",", ".") }}</span>
-            </div>
-            <div class="produk-info">
-                <h3>{{ produk.nama }}</h3>
-                <p class="deskripsi">{{ produk.deskripsi or '' }}</p>
-                <p class="stok">Stok: {{ produk.stok }}</p>
-            </div>
-        </a>
-        <div class="produk-aksi">
-            <button onclick="tambahKeKeranjang({{ produk.id }})" {% if produk.stok == 0 %}disabled{% endif %}>
-                {% if produk.stok == 0 %}Habis{% else %}+ Keranjang{% endif %}
-            </button>
-        </div>
-    </div>
-    {% else %}
-    <p>Belum ada produk.</p>
-    {% endfor %}
-</div>
+<div class="produk-grid" id="produk-grid"><p>Memuat menu...</p></div>
 <p id="cari-kosong" class="cari-kosong" style="display:none;">Produk yang kamu cari nggak ketemu, coba kata kunci lain.</p>
 {% endblock %}
 
 {% block script %}
 <script>
+let urutanAktif = "semua";
+
+async function muatProdukList() {
+    const grid = document.getElementById("produk-grid");
+    grid.innerHTML = "<p>Memuat menu...</p>";
+
+    try {
+        const res = await fetch(`/produk/?urutan=${urutanAktif}&limit=200`);
+        const produkList = await res.json();
+        renderProdukGrid(produkList);
+    } catch (err) {
+        grid.innerHTML = "<p>Gagal memuat menu, coba refresh halaman.</p>";
+    }
+}
+
+function renderProdukGrid(produkList) {
+    const grid = document.getElementById("produk-grid");
+
+    if (!produkList.length) {
+        grid.innerHTML = "<p>Belum ada produk.</p>";
+        return;
+    }
+
+    grid.innerHTML = produkList.map((p) => {
+        const cariKey = escapeHtml(`${p.nama} ${p.deskripsi || ""} ${p.kategori || ""}`.toLowerCase());
+        const foto = p.gambar_url
+            ? `<img src="${escapeHtml(p.gambar_url)}" alt="${escapeHtml(p.nama)}">`
+            : `<div class="produk-placeholder">🥣</div>`;
+        return `
+        <div class="produk-card" data-cari="${cariKey}">
+            <a href="/menu/${p.id}" class="produk-link">
+                <div class="produk-media">
+                    ${foto}
+                    <span class="harga-stamp">Rp${p.harga.toLocaleString("id-ID")}</span>
+                </div>
+                <div class="produk-info">
+                    <h3>${escapeHtml(p.nama)}</h3>
+                    <p class="deskripsi">${escapeHtml(p.deskripsi || "")}</p>
+                    <p class="stok">Stok: ${p.stok}</p>
+                </div>
+            </a>
+            <div class="produk-aksi">
+                <button onclick="tambahKeKeranjang(${p.id})" ${p.stok === 0 ? "disabled" : ""}>
+                    ${p.stok === 0 ? "Habis" : "+ Keranjang"}
+                </button>
+            </div>
+        </div>`;
+    }).join("");
+
+    filterProduk();
+}
+
+function gantiUrutan(urutan) {
+    urutanAktif = urutan;
+    document.querySelectorAll("#tab-urutan button").forEach((btn) => {
+        btn.classList.toggle("tab-aktif", btn.dataset.urutan === urutan);
+    });
+    muatProdukList();
+}
+
 function filterProduk() {
     const kataKunci = document.getElementById("cari-produk").value.trim().toLowerCase();
     const kartuList = document.querySelectorAll("#produk-grid .produk-card");
@@ -59,5 +98,7 @@ function filterProduk() {
 
     document.getElementById("cari-kosong").style.display = (adaYangTampil || kartuList.length === 0) ? "none" : "block";
 }
+
+muatProdukList();
 </script>
 {% endblock %}
