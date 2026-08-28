@@ -12,6 +12,20 @@ function escapeHtml(teks) {
         .replace(/'/g, "&#39;");
 }
 
+// FastAPI kirim error validasi (422) sebagai LIST of object, bukan string — kalau
+// langsung ditaruh di textContent hasilnya "[object Object]" yang nggak jelas.
+// Dipakai di semua halaman yang nangani error dari fetch(), lewat main.js biar 1 tempat.
+function formatErrorDetail(detail) {
+    if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+        return detail.map((d) => {
+            const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : "";
+            return field ? `${field}: ${d.msg}` : d.msg;
+        }).join("; ");
+    }
+    return null;
+}
+
 async function renderNavAuth() {
     const token = localStorage.getItem("access_token");
     const navAuth = document.getElementById("nav-auth");
