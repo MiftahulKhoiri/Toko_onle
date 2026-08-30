@@ -24,11 +24,16 @@ def get_current_user(
     if payload is None:
         raise credentials_exception
 
-    email: str = payload.get("sub")
-    if email is None:
+    id_user = payload.get("sub")
+    if id_user is None:
         raise credentials_exception
 
-    user = db.query(models.User).filter(models.User.email == email).first()
+    try:
+        id_user = int(id_user)
+    except (TypeError, ValueError):
+        raise credentials_exception
+
+    user = db.query(models.User).filter(models.User.id == id_user).first()
     if user is None:
         raise credentials_exception
 
