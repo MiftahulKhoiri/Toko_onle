@@ -39,9 +39,25 @@ class ProdukResponse(ProdukBase):
 
 
 # ---------- User ----------
+def _normalisasi_telepon(v: str) -> str:
+    """Rapikan format nomor HP ke '08xxxxxxxxxx' — orang bisa ngetik pakai
+    +62, 62, atau spasi/strip di antara angka, semuanya disamakan biar
+    nggak ada 2 akun beda format buat nomor yang sama."""
+    if v is None:
+        return v
+    v = v.strip().replace(" ", "").replace("-", "")
+    if v.startswith("+62"):
+        v = "0" + v[3:]
+    elif v.startswith("62"):
+        v = "0" + v[2:]
+    if not v.isdigit() or not v.startswith("0") or not (9 <= len(v) <= 15):
+        raise ValueError("Nomor HP tidak valid, contoh: 081234567890")
+    return v
+
+
 class UserBase(BaseModel):
     nama: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     telepon: Optional[str] = None
     alamat_jalan: Optional[str] = None
     kelurahan: Optional[str] = None
@@ -51,8 +67,18 @@ class UserBase(BaseModel):
     kode_pos: Optional[str] = None
 
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    """Daftar pakai email — email & password tetap wajib di jalur ini."""
+    nama: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
+    telepon: Optional[str] = None
+    alamat_jalan: Optional[str] = None
+    kelurahan: Optional[str] = None
+    kecamatan: Optional[str] = None
+    kota: Optional[str] = None
+    provinsi: Optional[str] = None
+    kode_pos: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -72,7 +98,45 @@ class UserResponse(UserBase):
     id: int
     is_admin: bool = False
     foto_url: Optional[str] = None
+    daftar_via: str = "email"
     created_at: datetime
+
+
+# ---------- Daftar cepat: No. Telepon ----------
+class TeleponRegister(BaseModel):
+    nama: str = Field(..., min_length=1, max_length=100)
+    telepon: str = Field(..., min_length=9, max_length=20)
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("telepon")
+    @classmethod
+    def _validasi_telepon(cls, v):
+        return _normalisasi_telepon(v)
+
+
+class TeleponLogin(BaseModel):
+    telepon: str
+    password: str
+
+    @field_validator("telepon")
+    @classmethod
+    def _validasi_telepon(cls, v):
+        return _normalisasi_telepon(v)
+
+
+# ---------- Daftar cepat: Google & Facebook ----------
+class GoogleLogin(BaseModel):
+    """credential = ID token JWT yang dikirim tombol Google Identity Services
+    di browser. Server WAJIB verifikasi ulang token ini ke Google (lihat
+    app/social_auth.py) — nggak boleh dipercaya mentah-mentah dari client."""
+    credential: str = Field(..., min_length=1)
+
+
+class FacebookLogin(BaseModel):
+    """access_token = token yang dikirim Facebook JS SDK (FB.login) di
+    browser. Server WAJIB verifikasi ulang token ini ke Facebook Graph API
+    (lihat app/social_auth.py) — nggak boleh dipercaya mentah-mentah dari client."""
+    access_token: str = Field(..., min_length=1)
 
 
 # ---------- Auth ----------
