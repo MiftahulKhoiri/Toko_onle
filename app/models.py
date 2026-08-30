@@ -27,10 +27,21 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nama = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    telepon = Column(String(20), nullable=True)
+
+    # Email & password sekarang boleh kosong karena akun bisa dibuat lewat
+    # Google/Facebook/No. HP yang nggak selalu punya salah satu dari keduanya.
+    # Tiap user WAJIB punya minimal satu identitas login (email, telepon, google_sub,
+    # atau facebook_id) — ini dijaga di kode router auth, bukan di level kolom.
+    email = Column(String(100), unique=True, index=True, nullable=True)
+    hashed_password = Column(String(255), nullable=True)
+    telepon = Column(String(20), unique=True, index=True, nullable=True)
     foto_url = Column(String(255), nullable=True)  # foto profil, cuma 1
+
+    # Login sosial — diisi otomatis pas pertama kali daftar/masuk lewat provider terkait
+    google_sub = Column(String(255), unique=True, index=True, nullable=True)
+    facebook_id = Column(String(255), unique=True, index=True, nullable=True)
+    # Catatan cara akun ini pertama kali dibuat: "email" | "telepon" | "google" | "facebook"
+    daftar_via = Column(String(20), nullable=False, default="email")
 
     # --- Alamat lama di profil (dipertahankan, sudah nggak dipakai di alur checkout baru) ---
     alamat_jalan = Column(Text, nullable=True)
