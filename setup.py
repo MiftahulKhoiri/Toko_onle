@@ -56,13 +56,21 @@ def setup_env():
     env.setdefault("SMTP_PASSWORD", "")
     env.setdefault("SMTP_FROM_NAME", "Salome Cakyud")
 
+    env.setdefault("GOOGLE_CLIENT_ID", "")
+    env.setdefault("FACEBOOK_APP_ID", "")
+    env.setdefault("FACEBOOK_APP_SECRET", "")
+
     tulis_env(ENV_PATH, env)
     print(f"✓ File '{ENV_PATH}' siap.\n")
 
     if not env.get("SMTP_USER") or not env.get("SMTP_PASSWORD"):
         print("→ SMTP_USER & SMTP_PASSWORD masih kosong, isi manual nanti kalau mau aktifkan notifikasi email.")
     if not env.get("MIDTRANS_SERVER_KEY") or not env.get("MIDTRANS_CLIENT_KEY"):
-        print("→ MIDTRANS_SERVER_KEY & MIDTRANS_CLIENT_KEY masih kosong, isi manual nanti kalau mau aktifkan pembayaran.\n")
+        print("→ MIDTRANS_SERVER_KEY & MIDTRANS_CLIENT_KEY masih kosong, isi manual nanti kalau mau aktifkan pembayaran.")
+    if not env.get("GOOGLE_CLIENT_ID"):
+        print("→ GOOGLE_CLIENT_ID masih kosong, isi manual nanti kalau mau aktifkan tombol \"Daftar dengan Google\".")
+    if not env.get("FACEBOOK_APP_ID") or not env.get("FACEBOOK_APP_SECRET"):
+        print("→ FACEBOOK_APP_ID & FACEBOOK_APP_SECRET masih kosong, isi manual nanti kalau mau aktifkan tombol \"Daftar dengan Facebook\".\n")
 
 
 def setup_admin():
@@ -73,24 +81,28 @@ def setup_admin():
     admin_sekarang = db.query(models.User).filter(models.User.is_admin == True).first()
 
     if admin_sekarang:
-        print(f"- Sudah ada admin: {admin_sekarang.nama} ({admin_sekarang.email})")
+        print(f"- Sudah ada admin: {admin_sekarang.nama} ({admin_sekarang.email or admin_sekarang.telepon})")
         jawaban = input("Mau jadikan akun lain sebagai admin juga? (y/n): ").strip().lower()
         if jawaban != "y":
             print("- Dilewati, admin yang lama tetap dipakai.\n")
             db.close()
             return
 
-    email = input("Email akun yang mau dijadikan admin: ").strip()
-    user = db.query(models.User).filter(models.User.email == email).first()
+    identitas = input("Email ATAU No. HP akun yang mau dijadikan admin: ").strip()
+    user = (
+        db.query(models.User)
+        .filter((models.User.email == identitas) | (models.User.telepon == identitas))
+        .first()
+    )
 
     if not user:
-        print("✗ User tidak ditemukan. Pastikan sudah register dulu lewat /register. Dilewati.\n")
+        print("✗ User tidak ditemukan. Pastikan sudah daftar dulu (email/HP/Google/Facebook). Dilewati.\n")
     elif user.is_admin:
-        print(f"- {user.nama} ({user.email}) sudah jadi admin sebelumnya. Dilewati.\n")
+        print(f"- {user.nama} sudah jadi admin sebelumnya. Dilewati.\n")
     else:
         user.is_admin = True
         db.commit()
-        print(f"✓ {user.nama} ({user.email}) sekarang jadi admin.\n")
+        print(f"✓ {user.nama} sekarang jadi admin.\n")
 
     db.close()
 
