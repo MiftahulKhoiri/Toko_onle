@@ -85,9 +85,18 @@ def checkout(
             "name": f"Ongkos Kirim ({cart.metode_pengiriman})",
         })
 
+    # email/telepon sekarang boleh kosong (akun Google tanpa email publik, akun
+    # daftar-cepat lewat Facebook/No. HP, dst) — jangan kirim key-nya sama sekali
+    # ke Midtrans kalau kosong, daripada kirim null yang bisa ditolak validasi mereka.
+    customer_details = {"first_name": current_user.nama}
+    if current_user.email:
+        customer_details["email"] = current_user.email
+    if current_user.telepon:
+        customer_details["phone"] = current_user.telepon
+
     param = {
         "transaction_details": {"order_id": order_id, "gross_amount": gross_amount},
-        "customer_details": {"first_name": current_user.nama, "email": current_user.email},
+        "customer_details": customer_details,
         "item_details": item_details,
     }
 
