@@ -5,6 +5,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -12,6 +13,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.rate_limit import batasi_percobaan
 from app.security import create_access_token, hash_password, verify_password
+from app.social_auth import verifikasi_token_facebook, verifikasi_token_google
 
 router = APIRouter(
     prefix="/auth",
@@ -36,6 +38,23 @@ def _hapus_foto_lama(foto_url: Optional[str]) -> None:
             pass
 
 
+def _buat_token(user: models.User) -> dict:
+    # "sub" pakai id (bukan email) karena sekarang nggak semua user punya email
+    # (akun Google tanpa email publik, akun daftar-cepat-HP, dll).
+    access_token = create_access_token(data={"sub": str(user.id)})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+def _commit_atau_konflik(db: Session, pesan: str):
+    """Commit, tapi tangkep race condition (2 request nyaris bareng daftar
+    pakai email/HP/akun sosial yang sama) biar nggak nge-crash jadi 500."""
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=pesan)
+
+
 @router.post("/register", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
 def register(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     batasi_percobaan(f"register:{request.client.host}", maks=5, jendela_detik=600)
@@ -58,9 +77,33 @@ def register(user: schemas.UserCreate, request: Request, db: Session = Depends(g
         kota=user.kota,
         provinsi=user.provinsi,
         kode_pos=user.kode_pos,
+        daftar_via="email",
     )
     db.add(db_user)
-    db.commit()
+    _commit_atau_konflik(db, "Email sudah terdaftar")
+    db.refresh(db_user)
+    return db_user
+
+
+@router.post("/register-telepon", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
+def register_telepon(data: schemas.TeleponRegister, request: Request, db: Session = Depends(get_db)):
+    """Daftar cepat pakai No. HP + password — tanpa OTP. Karena nggak ada
+    verifikasi kepemilikan nomor, password TETAP wajib supaya orang lain
+    nggak bisa asal login pakai nomor HP siapa aja."""
+    batasi_percobaan(f"register:{request.client.host}", maks=5, jendela_detik=600)
+
+    existing = db.query(models.User).filter(models.User.telepon == data.telepon).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nomor HP sudah terdaftar")
+
+    db_user = models.User(
+        nama=data.nama,
+        telepon=data.telepon,
+        hashed_password=hash_password(data.password),
+        daftar_via="telepon",
+    )
+    db.add(db_user)
+    _commit_atau_konflik(db, "Nomor HP sudah terdaftar")
     db.refresh(db_user)
     return db_user
 
@@ -72,15 +115,88 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     email_normal = form_data.username.strip().lower()
     user = db.query(models.User).filter(models.User.email == email_normal).first()
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not user.hashed_password or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email atau password salah",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+    return _buat_token(user)
+
+
+@router.post("/login-telepon", response_model=schemas.Token)
+def login_telepon(data: schemas.TeleponLogin, request: Request, db: Session = Depends(get_db)):
+    batasi_percobaan(f"login:{request.client.host}", maks=5, jendela_detik=300)
+
+    user = db.query(models.User).filter(models.User.telepon == data.telepon).first()
+
+    if not user or not user.hashed_password or not verify_password(data.password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nomor HP atau password salah")
+
+    return _buat_token(user)
+
+
+@router.post("/google", response_model=schemas.Token)
+def login_google(data: schemas.GoogleLogin, request: Request, db: Session = Depends(get_db)):
+    """Satu endpoint buat DAFTAR sekaligus LOGIN — kalau akun Google-nya
+    belum pernah dipakai di sini, otomatis dibikinin akun baru."""
+    batasi_percobaan(f"sosial:{request.client.host}", maks=15, jendela_detik=300)
+
+    info = verifikasi_token_google(data.credential)
+    email_normal = info["email"].strip().lower() if info["email"] else None
+
+    user = db.query(models.User).filter(models.User.google_sub == info["sub"]).first()
+
+    if not user and email_normal:
+        # Sudah pernah daftar pakai email yang sama sebelumnya -> tautkan akun,
+        # jangan bikin akun baru yang duplikat.
+        user = db.query(models.User).filter(models.User.email == email_normal).first()
+        if user:
+            user.google_sub = info["sub"]
+
+    if not user:
+        user = models.User(
+            nama=info["nama"],
+            email=email_normal,
+            google_sub=info["sub"],
+            foto_url=info.get("foto_url"),
+            daftar_via="google",
+        )
+        db.add(user)
+
+    _commit_atau_konflik(db, "Gagal menautkan akun Google, coba lagi")
+    db.refresh(user)
+    return _buat_token(user)
+
+
+@router.post("/facebook", response_model=schemas.Token)
+def login_facebook(data: schemas.FacebookLogin, request: Request, db: Session = Depends(get_db)):
+    """Sama seperti /auth/google — daftar sekaligus login lewat 1 endpoint."""
+    batasi_percobaan(f"sosial:{request.client.host}", maks=15, jendela_detik=300)
+
+    info = verifikasi_token_facebook(data.access_token)
+    email_normal = info["email"].strip().lower() if info.get("email") else None
+
+    user = db.query(models.User).filter(models.User.facebook_id == info["id"]).first()
+
+    if not user and email_normal:
+        user = db.query(models.User).filter(models.User.email == email_normal).first()
+        if user:
+            user.facebook_id = info["id"]
+
+    if not user:
+        user = models.User(
+            nama=info["nama"],
+            email=email_normal,
+            facebook_id=info["id"],
+            daftar_via="facebook",
+        )
+        db.add(user)
+
+    _commit_atau_konflik(db, "Gagal menautkan akun Facebook, coba lagi")
+    db.refresh(user)
+    return _buat_token(user)
 
 
 @router.get("/me", response_model=schemas.UserResponse)
