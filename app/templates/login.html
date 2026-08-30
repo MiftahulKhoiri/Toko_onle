@@ -4,6 +4,21 @@
 {% block content %}
 <div class="form-box">
     <h1>Login</h1>
+
+    <div class="login-sosial">
+        <div id="g-btn-login"></div>
+        <button type="button" id="btn-facebook-login" class="btn-sosial btn-facebook">
+            <span class="btn-sosial-ikon">f</span> Masuk dengan Facebook
+        </button>
+    </div>
+
+    <div class="pembatas-atau"><span>atau</span></div>
+
+    <div class="tab-daftar">
+        <button type="button" id="tab-email" class="aktif">Pakai Email</button>
+        <button type="button" id="tab-telepon">Pakai No. HP</button>
+    </div>
+
     <form id="login-form">
         <label>Email</label>
         <input type="email" id="email" required>
@@ -11,20 +26,53 @@
         <input type="password" id="password" required>
         <button type="submit" id="login-btn">Login</button>
     </form>
+
+    <form id="login-form-telepon" class="tersembunyi">
+        <label>No. HP</label>
+        <input type="tel" id="tp-telepon" placeholder="081234567890" required>
+        <label>Password</label>
+        <input type="password" id="tp-password" required>
+        <button type="submit" id="login-btn-telepon">Login</button>
+    </form>
+
     <p id="error-msg" class="error"></p>
     <p>Belum punya akun? <a href="/register">Daftar</a></p>
 </div>
 {% endblock %}
 
 {% block script %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+const GOOGLE_CLIENT_ID = "{{ google_client_id }}";
+const FACEBOOK_APP_ID = "{{ facebook_app_id }}";
+const errorMsg = document.getElementById("error-msg");
+
+// ---------- Tab "Pakai Email" / "Pakai No. HP" ----------
+const tabEmail = document.getElementById("tab-email");
+const tabTelepon = document.getElementById("tab-telepon");
+const formEmail = document.getElementById("login-form");
+const formTelepon = document.getElementById("login-form-telepon");
+
+tabEmail.addEventListener("click", () => {
+    tabEmail.classList.add("aktif");
+    tabTelepon.classList.remove("aktif");
+    formEmail.classList.remove("tersembunyi");
+    formTelepon.classList.add("tersembunyi");
+    errorMsg.textContent = "";
+});
+tabTelepon.addEventListener("click", () => {
+    tabTelepon.classList.add("aktif");
+    tabEmail.classList.remove("aktif");
+    formTelepon.classList.remove("tersembunyi");
+    formEmail.classList.add("tersembunyi");
+    errorMsg.textContent = "";
+});
+
+// ---------- Hitung mundur kalau kena rate-limit (dipakai bareng 2 form) ----------
 let hitungMundurTimer = null;
 
-function mulaiHitungMundur(detik) {
-    const errorMsg = document.getElementById("error-msg");
-    const tombol = document.getElementById("login-btn");
+function mulaiHitungMundur(detik, tombol) {
     let sisa = detik;
-
     tombol.disabled = true;
     clearInterval(hitungMundurTimer);
 
@@ -45,11 +93,11 @@ function mulaiHitungMundur(detik) {
     }, 1000);
 }
 
-document.getElementById("login-form").addEventListener("submit", async (e) => {
+// ---------- Login pakai Email (form lama) ----------
+formEmail.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    const errorMsg = document.getElementById("error-msg");
     errorMsg.textContent = "";
 
     try {
@@ -61,10 +109,9 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 
         if (res.status === 429) {
             const retryAfter = parseInt(res.headers.get("Retry-After") || "60", 10);
-            mulaiHitungMundur(retryAfter);
+            mulaiHitungMundur(retryAfter, document.getElementById("login-btn"));
             return;
         }
-
         if (!res.ok) {
             const err = await res.json();
             errorMsg.textContent = err.detail || "Login gagal";
@@ -77,5 +124,105 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
         errorMsg.textContent = "Tidak bisa terhubung ke server";
     }
 });
+
+// ---------- Login pakai No. HP ----------
+formTelepon.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const telepon = document.getElementById("tp-telepon").value;
+    const password = document.getElementById("tp-password").value;
+    errorMsg.textContent = "";
+
+    try {
+        const res = await fetch("/auth/login-telepon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ telepon, password }),
+        });
+
+        if (res.status === 429) {
+            const retryAfter = parseInt(res.headers.get("Retry-After") || "60", 10);
+            mulaiHitungMundur(retryAfter, document.getElementById("login-btn-telepon"));
+            return;
+        }
+        if (!res.ok) {
+            const err = await res.json();
+            errorMsg.textContent = formatErrorDetail(err.detail) || "Login gagal";
+            return;
+        }
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        window.location.href = "/";
+    } catch (err) {
+        errorMsg.textContent = "Tidak bisa terhubung ke server";
+    }
+});
+
+// ---------- Dipakai bareng oleh tombol Google & Facebook ----------
+async function masukPakaiSosial(endpoint, body) {
+    errorMsg.textContent = "";
+    try {
+        const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            errorMsg.textContent = formatErrorDetail(err.detail) || "Gagal masuk";
+            return;
+        }
+        const data = await res.json();
+        localStorage.setItem("access_token", data.access_token);
+        window.location.href = "/";
+    } catch (err) {
+        errorMsg.textContent = "Tidak bisa terhubung ke server";
+    }
+}
+
+// ---------- Tombol Google ----------
+if (GOOGLE_CLIENT_ID) {
+    window.addEventListener("load", () => {
+        if (!window.google || !window.google.accounts) return;
+        google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response) => masukPakaiSosial("/auth/google", { credential: response.credential }),
+        });
+        google.accounts.id.renderButton(
+            document.getElementById("g-btn-login"),
+            { theme: "outline", size: "large", width: 260, text: "signin_with", locale: "id_ID" }
+        );
+    });
+} else {
+    document.getElementById("g-btn-login").remove();
+}
+
+// ---------- Tombol Facebook ----------
+const btnFacebook = document.getElementById("btn-facebook-login");
+if (FACEBOOK_APP_ID) {
+    window.fbAsyncInit = function () {
+        FB.init({ appId: FACEBOOK_APP_ID, cookie: true, xfbml: false, version: "v19.0" });
+    };
+    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s); js.id = id;
+        js.src = "https://connect.facebook.net/id_ID/sdk.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, "script", "facebook-jssdk"));
+
+    btnFacebook.addEventListener("click", () => {
+        if (!window.FB) {
+            errorMsg.textContent = "Facebook SDK belum siap, coba lagi sebentar";
+            return;
+        }
+        FB.login((response) => {
+            if (response.authResponse) {
+                masukPakaiSosial("/auth/facebook", { access_token: response.authResponse.accessToken });
+            }
+        }, { scope: "public_profile,email" });
+    });
+} else {
+    btnFacebook.remove();
+}
 </script>
 {% endblock %}
