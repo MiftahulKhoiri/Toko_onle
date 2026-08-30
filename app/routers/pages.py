@@ -1,4 +1,6 @@
 # app/routers/pages.py
+import os
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -11,6 +13,15 @@ router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
 
 NAMA_TOKO = "Salome Cakyud"
+
+
+def _konteks_login_sosial() -> dict:
+    """Client ID/App ID di sini AMAN ditaruh di HTML — keduanya memang publik
+    (beda sama Client Secret / App Secret yang cuma boleh ada di server/.env)."""
+    return {
+        "google_client_id": os.getenv("GOOGLE_CLIENT_ID", ""),
+        "facebook_app_id": os.getenv("FACEBOOK_APP_ID", ""),
+    }
 
 
 @router.get("/")
@@ -31,14 +42,14 @@ def detail_produk_page(produk_id: int, request: Request, db: Session = Depends(g
 @router.get("/login")
 def login_page(request: Request):
     return templates.TemplateResponse(
-        request, "login.html", {"nama_toko": NAMA_TOKO}
+        request, "login.html", {"nama_toko": NAMA_TOKO, **_konteks_login_sosial()}
     )
 
 
 @router.get("/register")
 def register_page(request: Request):
     return templates.TemplateResponse(
-        request, "register.html", {"nama_toko": NAMA_TOKO}
+        request, "register.html", {"nama_toko": NAMA_TOKO, **_konteks_login_sosial()}
     )
 
 
