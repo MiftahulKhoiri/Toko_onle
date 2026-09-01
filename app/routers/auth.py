@@ -149,11 +149,20 @@ def login_google(data: schemas.GoogleLogin, request: Request, db: Session = Depe
     user = db.query(models.User).filter(models.User.google_sub == info["sub"]).first()
 
     if not user and email_normal:
-        # Sudah pernah daftar pakai email yang sama sebelumnya -> tautkan akun,
-        # jangan bikin akun baru yang duplikat.
-        user = db.query(models.User).filter(models.User.email == email_normal).first()
-        if user:
-            user.google_sub = info["sub"]
+        existing = db.query(models.User).filter(models.User.email == email_normal).first()
+        if existing:
+            if existing.hashed_password:
+                # JANGAN auto-tautkan & auto-login ke akun yang sudah punya password —
+                # bisa aja itu password buatan orang lain yang daftar duluan pakai email
+                # ini (pre-hijacking). Wajibkan login password dulu buat buktikan
+                # kepemilikan akun, baru boleh ditautkan.
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email ini sudah terdaftar dengan password. Login pakai email & password itu dulu ya.",
+                )
+            # Akun lama TANPA password (dulunya daftar sosial juga) -> aman ditautkan.
+            existing.google_sub = info["sub"]
+            user = existing
 
     if not user:
         user = models.User(
@@ -181,9 +190,17 @@ def login_facebook(data: schemas.FacebookLogin, request: Request, db: Session = 
     user = db.query(models.User).filter(models.User.facebook_id == info["id"]).first()
 
     if not user and email_normal:
-        user = db.query(models.User).filter(models.User.email == email_normal).first()
-        if user:
-            user.facebook_id = info["id"]
+        existing = db.query(models.User).filter(models.User.email == email_normal).first()
+        if existing:
+            if existing.hashed_password:
+                # Sama seperti /auth/google — jangan auto-tautkan ke akun berpassword,
+                # cegah celah pre-hijacking.
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Email ini sudah terdaftar dengan password. Login pakai email & password itu dulu ya.",
+                )
+            existing.facebook_id = info["id"]
+            user = existing
 
     if not user:
         user = models.User(
