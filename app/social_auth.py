@@ -13,6 +13,7 @@ import os
 
 import httpx
 from fastapi import HTTPException, status
+from google.auth import exceptions as google_exceptions
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token
 
@@ -36,6 +37,12 @@ def verifikasi_token_google(credential: str) -> dict:
         )
     except ValueError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Google tidak valid")
+    except google_exceptions.TransportError:
+        # Gagal konek ke server Google buat verifikasi token (bukan token-nya yang salah)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Gagal menghubungi server Google, coba lagi",
+        )
 
     if info.get("email") and not info.get("email_verified", False):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email Google belum diverifikasi")
