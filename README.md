@@ -85,3 +85,4 @@ Status yang dipakai: `pending` (keranjang aktif) → `menunggu_pembayaran` → `
    ```bash
    cd Toko_onle-main
 
+2. cara menjalankan uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
