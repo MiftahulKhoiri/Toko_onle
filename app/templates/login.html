@@ -114,7 +114,7 @@ formEmail.addEventListener("submit", async (e) => {
         }
         if (!res.ok) {
             const err = await res.json();
-            errorMsg.textContent = err.detail || "Login gagal";
+            errorMsg.textContent = formatErrorDetail(err.detail) || "Login gagal";
             return;
         }
         const data = await res.json();
