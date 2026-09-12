@@ -54,7 +54,7 @@ function renderPilihan() {
     html += `</div>
     <button type="button" class="alamat-tambah-toggle" onclick="tampilkanForm(false)">+ Tambah Alamat Baru</button>
     <div id="alamat-form-box" style="display:none;"></div>
-    <button type="button" onclick="lanjutBayar()" style="margin-top:1.2rem;">Lanjut ke Pembayaran</button>`;
+    <button type="button" id="tombol-lanjut-bayar" onclick="lanjutBayar()" style="margin-top:1.2rem;">Lanjut ke Pembayaran</button>`;
     document.getElementById("alamat-isi").innerHTML = html;
 }
 
@@ -169,20 +169,28 @@ async function lanjutBayar() {
         return;
     }
 
-    const res = await fetch("/payment/checkout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ alamat_id: ALAMAT_TERPILIH }),
-    });
+    // Cegah dobel klik/submit yang bisa bikin 2 transaksi Midtrans dari keranjang yang sama.
+    const tombol = document.getElementById("tombol-lanjut-bayar");
+    if (tombol) { tombol.disabled = true; tombol.textContent = "Memproses..."; }
 
-    if (!res.ok) {
-        const err = await res.json();
-        msg.textContent = formatErrorDetail(err.detail) || "Checkout gagal";
-        return;
+    try {
+        const res = await fetch("/payment/checkout", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ alamat_id: ALAMAT_TERPILIH }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            msg.textContent = formatErrorDetail(err.detail) || "Checkout gagal";
+            return;
+        }
+
+        const data = await res.json();
+        window.location.href = data.redirect_url;
+    } finally {
+        if (tombol) { tombol.disabled = false; tombol.textContent = "Lanjut ke Pembayaran"; }
     }
-
-    const data = await res.json();
-    window.location.href = data.redirect_url;
 }
 
 muatAlamat();
