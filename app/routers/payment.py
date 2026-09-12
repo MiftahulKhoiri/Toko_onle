@@ -1,5 +1,6 @@
 # app/routers/payment.py
 import hashlib
+import hmac
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -8,7 +9,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
-from app.midtrans_client import SERVER_KEY, core_api, snap
+from app.midtrans_client import SERVER_KEY, core_api, pastikan_midtrans_terkonfigurasi, snap
 from app.order_status import mark_as_cancelled, mark_as_paid
 
 router = APIRouter(prefix="/payment", tags=["payment"])
@@ -32,6 +33,7 @@ def checkout(
     current_user: models.User = Depends(get_current_user),
 ):
     cart = _get_pending_cart(db, current_user)
+    pastikan_midtrans_terkonfigurasi()
 
     if cart.metode_pengiriman == "diantar":
         if not data.alamat_id:
@@ -156,7 +158,7 @@ async def midtrans_webhook(request: Request, db: Session = Depends(get_db)):
     raw_signature = f"{order_id}{status_code}{gross_amount}{SERVER_KEY}"
     expected_signature = hashlib.sha512(raw_signature.encode()).hexdigest()
 
-    if signature_key != expected_signature:
+    if not signature_key or not hmac.compare_digest(signature_key, expected_signature):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Signature tidak valid")
 
     order = db.query(models.Order).filter(models.Order.midtrans_order_id == order_id).first()
@@ -193,6 +195,7 @@ def cek_status_manual(
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pesanan tidak ditemukan")
 
+    pastikan_midtrans_terkonfigurasi()
     result = core_api.transactions.status(order_id)
 
     transaction_status = result.get("transaction_status")
