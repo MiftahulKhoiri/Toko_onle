@@ -21,6 +21,7 @@ from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_admin, get_current_user
 from app.rate_limit import batasi_percobaan
+from app.upload_utils import pastikan_isi_gambar_valid
 
 router = APIRouter(tags=["profil_toko"])
 
@@ -81,6 +82,7 @@ async def upload_gambar_toko(
     isi_file = await file.read()
     if len(isi_file) > UKURAN_MAKS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 5MB")
+    pastikan_isi_gambar_valid(isi_file)
 
     nama_file = f"{uuid.uuid4().hex}{ekstensi}"
     with open(os.path.join(UPLOAD_DIR_TOKO, nama_file), "wb") as f:
@@ -176,6 +178,7 @@ async def upload_foto_testimoni_pembeli(
     isi_file = await file.read()
     if len(isi_file) > UKURAN_MAKS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 5MB")
+    pastikan_isi_gambar_valid(isi_file)
 
     nama_file = f"{uuid.uuid4().hex}{ekstensi}"
     with open(os.path.join(UPLOAD_DIR_TESTIMONI, nama_file), "wb") as f:
