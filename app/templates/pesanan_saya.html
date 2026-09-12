@@ -102,7 +102,7 @@ async function batalkanPesanan(orderId) {
         showToast("Pesanan berhasil dibatalkan");
     } else {
         const err = await res.json();
-        showToast(err.detail || "Gagal membatalkan pesanan", "error");
+        showToast(formatErrorDetail(err.detail) || "Gagal membatalkan pesanan", "error");
     }
     muatPesanan();
 }
