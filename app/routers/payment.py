@@ -58,10 +58,29 @@ def checkout(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Salah satu produk di keranjang sudah tidak tersedia, silakan hapus item tersebut dulu",
             )
-        if item.jumlah > item.produk.stok:
+
+    # Kurangi stok tiap item lewat UPDATE atomic (stok = stok - jumlah, DENGAN SYARAT
+    # stok >= jumlah, dicek di level SQL) — bukan baca-nilai-di-Python-lalu-tulis-belakangan
+    # seperti sebelumnya. Cara lama itu rawan race condition: kalau ada 2 checkout barengan
+    # buat produk yang sama, dua-duanya bisa "ngerasa" stok masih cukup karena sama-sama baca
+    # nilai lama sebelum salah satunya kepotong duluan, hasilnya stok bisa minus/oversell.
+    for item in cart.items:
+        baris_terupdate = (
+            db.query(models.Produk)
+            .filter(models.Produk.id == item.produk_id, models.Produk.stok >= item.jumlah)
+            .update({models.Produk.stok: models.Produk.stok - item.jumlah}, synchronize_session=False)
+        )
+        if baris_terupdate == 0:
+            # Batalkan (rollback) semua pengurangan stok item-item sebelumnya di loop checkout
+            # ini juga — belum ada db.commit() sama sekali sejak awal fungsi ini, jadi rollback
+            # aman ngembaliin semuanya ke kondisi awal.
+            db.rollback()
+            stok_sekarang = (
+                db.query(models.Produk.stok).filter(models.Produk.id == item.produk_id).scalar()
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stok {item.produk.nama} tidak cukup, sisa: {item.produk.stok}",
+                detail=f"Stok {item.produk.nama} tidak cukup, sisa: {stok_sekarang or 0}",
             )
 
     order_id = f"cakyud-{cart.id}-{secrets.token_hex(4)}"
@@ -100,10 +119,16 @@ def checkout(
         "item_details": item_details,
     }
 
-    transaction = snap.create_transaction(param)
-
-    for item in cart.items:
-        item.produk.stok -= item.jumlah
+    try:
+        transaction = snap.create_transaction(param)
+    except Exception:
+        # Gagal bikin transaksi di Midtrans (mis. Midtrans down/error) -> jangan lanjut,
+        # rollback biar stok yang tadi udah dipotong di atas balik lagi, nggak hilang percuma.
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Gagal membuat transaksi pembayaran, coba lagi",
+        )
 
     cart.status = "menunggu_pembayaran"
     cart.payment_method = "midtrans"
@@ -155,15 +180,25 @@ def cek_status_manual(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    """Buat testing lokal — webhook Midtrans nggak bisa nembak localhost tanpa tunnel (ngrok dll)."""
+    """Buat testing lokal — webhook Midtrans nggak bisa nembak localhost tanpa tunnel (ngrok dll).
+
+    Wajib cek kepemilikan (user_id) DULU sebelum tembak ke Midtrans — kalau nggak, siapa aja
+    yang login bisa intip (bahkan memicu perubahan status) pesanan ORANG LAIN cuma dengan
+    tau/nebak order_id-nya, karena Midtrans-nya sendiri nggak tau siapa yang lagi nanya."""
+    order = (
+        db.query(models.Order)
+        .filter(models.Order.midtrans_order_id == order_id, models.Order.user_id == current_user.id)
+        .first()
+    )
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pesanan tidak ditemukan")
+
     result = core_api.transactions.status(order_id)
 
-    order = db.query(models.Order).filter(models.Order.midtrans_order_id == order_id).first()
-    if order:
-        transaction_status = result.get("transaction_status")
-        if transaction_status in ("capture", "settlement"):
-            mark_as_paid(db, order)
-        elif transaction_status in ("cancel", "deny", "expire"):
-            mark_as_cancelled(db, order)
+    transaction_status = result.get("transaction_status")
+    if transaction_status in ("capture", "settlement"):
+        mark_as_paid(db, order)
+    elif transaction_status in ("cancel", "deny", "expire"):
+        mark_as_cancelled(db, order)
 
     return result
