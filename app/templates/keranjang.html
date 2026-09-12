@@ -90,7 +90,7 @@ async function muatKeranjang() {
         <p><span>Ongkir</span><span class="mono">Rp${cart.ongkir.toLocaleString("id-ID")}</span></p>
         <p class="total"><span>Total</span><span class="mono">Rp${cart.total_harga.toLocaleString("id-ID")}</span></p>
     </div>
-    <button onclick="checkout()">Checkout</button>`;
+    <button id="tombol-checkout" onclick="checkout()">Checkout</button>`;
     container.innerHTML = html;
 }
 
@@ -161,20 +161,28 @@ async function checkout() {
         return;
     }
 
-    // Ambil Sendiri: nggak butuh alamat, langsung checkout
-    const token = localStorage.getItem("access_token");
-    const res = await fetch("/payment/checkout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ alamat_id: null }),
-    });
-    if (!res.ok) {
-        const err = await res.json();
-        showToast(formatErrorDetail(err.detail) || "Checkout gagal", "error");
-        return;
+    // Cegah dobel klik/submit yang bisa bikin 2 transaksi Midtrans dari keranjang yang sama.
+    const tombol = document.getElementById("tombol-checkout");
+    if (tombol) { tombol.disabled = true; tombol.textContent = "Memproses..."; }
+
+    try {
+        // Ambil Sendiri: nggak butuh alamat, langsung checkout
+        const token = localStorage.getItem("access_token");
+        const res = await fetch("/payment/checkout", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ alamat_id: null }),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            showToast(formatErrorDetail(err.detail) || "Checkout gagal", "error");
+            return;
+        }
+        const data = await res.json();
+        window.location.href = data.redirect_url;
+    } finally {
+        if (tombol) { tombol.disabled = false; tombol.textContent = "Checkout"; }
     }
-    const data = await res.json();
-    window.location.href = data.redirect_url;
 }
 
 muatKeranjang();
