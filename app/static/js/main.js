@@ -146,7 +146,7 @@ async function tambahKeKeranjang(produkId) {
 
     if (!res.ok) {
         const err = await res.json();
-        showToast(err.detail || "Gagal menambahkan ke keranjang", "error");
+        showToast(formatErrorDetail(err.detail) || "Gagal menambahkan ke keranjang", "error");
         return;
     }
     updateCartBadge();
