@@ -124,7 +124,7 @@ async function uploadFoto(fileInputEl) {
 
     if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.detail || "Gagal upload foto");
+        throw new Error(formatErrorDetail(err.detail) || "Gagal upload foto");
     }
     const data = await res.json();
     return data.gambar_url;
