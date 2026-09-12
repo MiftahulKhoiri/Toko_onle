@@ -14,6 +14,7 @@ from app.dependencies import get_current_user
 from app.rate_limit import batasi_percobaan
 from app.security import create_access_token, hash_password, verify_password
 from app.social_auth import verifikasi_token_facebook, verifikasi_token_google
+from app.upload_utils import pastikan_isi_gambar_valid
 
 router = APIRouter(
     prefix="/auth",
@@ -252,6 +253,7 @@ async def upload_foto_profil(
     isi_file = await file.read()
     if len(isi_file) > UKURAN_MAKS_FOTO:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 3MB")
+    pastikan_isi_gambar_valid(isi_file)
 
     foto_lama = current_user.foto_url
 
