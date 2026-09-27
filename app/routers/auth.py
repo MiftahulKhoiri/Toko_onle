@@ -1,6 +1,7 @@
 # app/routers/auth.py
 import os
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
@@ -11,8 +12,15 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_user
+from app.email_utils import kirim_email_info_akun_sosial, kirim_email_reset_password
 from app.rate_limit import batasi_percobaan
-from app.security import create_access_token, hash_password, verify_password
+from app.security import (
+    buat_reset_token,
+    create_access_token,
+    hash_password,
+    hash_reset_token,
+    verify_password,
+)
 from app.social_auth import verifikasi_token_facebook, verifikasi_token_google
 from app.upload_utils import pastikan_isi_gambar_valid
 
@@ -24,8 +32,16 @@ router = APIRouter(
 UPLOAD_DIR_FOTO = "app/static/img/profil"
 EKSTENSI_DIIZINKAN_FOTO = {".jpg", ".jpeg", ".png", ".webp"}
 UKURAN_MAKS_FOTO = 3 * 1024 * 1024  # 3MB — sudah di-resize di browser sebelum diunggah
+RESET_TOKEN_EXPIRE_MENIT = 30
 
 os.makedirs(UPLOAD_DIR_FOTO, exist_ok=True)
+
+
+def _waktu_sekarang() -> datetime:
+    """UTC tanpa tzinfo (naive) — dipilih biar konsisten pas disimpan & dibandingkan
+    lewat SQLite, yang pada praktiknya nggak beneran nyimpen offset zona waktu
+    walau kolomnya didefinisikan DateTime(timezone=True)."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def _hapus_foto_lama(foto_url: Optional[str]) -> None:
@@ -135,6 +151,74 @@ def login_telepon(data: schemas.TeleponLogin, request: Request, db: Session = De
     if not user or not user.hashed_password or not verify_password(data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nomor HP atau password salah")
 
+    return _buat_token(user)
+
+
+@router.post("/lupa-password")
+def lupa_password(data: schemas.LupaPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    batasi_percobaan(f"lupa-password:{request.client.host}", maks=5, jendela_detik=600)
+
+    # SENGAJA balikin pesan yang SAMA PERSIS di semua kondisi (email nggak ketemu,
+    # ketemu tapi akun sosial tanpa password, atau ketemu & berhasil dikirimin link) —
+    # biar endpoint ini nggak bisa dipakai buat nebak-nebak (enumerate) email mana
+    # yang punya akun di toko ini.
+    pesan_generik = {
+        "detail": "Kalau email itu terdaftar, link reset password sudah dikirim. Cek juga folder Spam."
+    }
+
+    email_normal = data.email.strip().lower()
+    user = db.query(models.User).filter(models.User.email == email_normal).first()
+
+    if not user:
+        return pesan_generik
+
+    if not user.hashed_password:
+        # Akun ini daftar lewat Google/Facebook, nggak punya password buat direset.
+        # Kasih tau lewat email (channel privat ke pemilik akun asli), BUKAN lewat
+        # response ini.
+        kirim_email_info_akun_sosial(user)
+        return pesan_generik
+
+    token_mentah, token_hash = buat_reset_token()
+    user.reset_token_hash = token_hash
+    user.reset_token_expires = _waktu_sekarang() + timedelta(minutes=RESET_TOKEN_EXPIRE_MENIT)
+    db.commit()
+
+    kirim_email_reset_password(user, token_mentah)
+    return pesan_generik
+
+
+@router.post("/reset-password", response_model=schemas.Token)
+def reset_password(data: schemas.ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    batasi_percobaan(f"reset-password:{request.client.host}", maks=10, jendela_detik=600)
+
+    token_hash = hash_reset_token(data.token)
+    user = db.query(models.User).filter(models.User.reset_token_hash == token_hash).first()
+
+    gagal = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Link reset tidak valid atau sudah kedaluwarsa, silakan minta link baru.",
+    )
+    if not user or not user.reset_token_expires:
+        raise gagal
+
+    kedaluwarsa = user.reset_token_expires
+    if kedaluwarsa.tzinfo is not None:  # jaga-jaga kalau suatu saat pindah dialect DB lain
+        kedaluwarsa = kedaluwarsa.replace(tzinfo=None)
+    if _waktu_sekarang() > kedaluwarsa:
+        raise gagal
+
+    user.hashed_password = hash_password(data.password_baru)
+    # Token cuma boleh dipakai sekali — langsung dikosongin biar link yang sama nggak
+    # bisa dipakai lagi (mis. kalau link kepencet 2x atau nggak sengaja ke-share).
+    user.reset_token_hash = None
+    user.reset_token_expires = None
+    db.commit()
+    db.refresh(user)
+
+    # Catatan: JWT yang sudah terlanjur diterbitkan sebelum reset ini TETAP valid sampai
+    # kedaluwarsa alaminya (maks 1 hari, lihat ACCESS_TOKEN_EXPIRE_MINUTES) — proyek ini
+    # belum punya mekanisme pencabutan token, sama seperti belum ada di alur lain juga.
     return _buat_token(user)
 
 
