@@ -60,6 +60,8 @@ def setup_env():
     env.setdefault("FACEBOOK_APP_ID", "")
     env.setdefault("FACEBOOK_APP_SECRET", "")
 
+    env.setdefault("APP_BASE_URL", "http://localhost:8000")
+
     tulis_env(ENV_PATH, env)
     print(f"✓ File '{ENV_PATH}' siap.\n")
 
@@ -70,7 +72,9 @@ def setup_env():
     if not env.get("GOOGLE_CLIENT_ID"):
         print("→ GOOGLE_CLIENT_ID masih kosong, isi manual nanti kalau mau aktifkan tombol \"Daftar dengan Google\".")
     if not env.get("FACEBOOK_APP_ID") or not env.get("FACEBOOK_APP_SECRET"):
-        print("→ FACEBOOK_APP_ID & FACEBOOK_APP_SECRET masih kosong, isi manual nanti kalau mau aktifkan tombol \"Daftar dengan Facebook\".\n")
+        print("→ FACEBOOK_APP_ID & FACEBOOK_APP_SECRET masih kosong, isi manual nanti kalau mau aktifkan tombol \"Daftar dengan Facebook\".")
+    if env.get("APP_BASE_URL") == "http://localhost:8000":
+        print("→ APP_BASE_URL masih default (http://localhost:8000) — ganti ke domain asli toko di .env kalau sudah online, dipakai buat bikin link di email reset password.\n")
 
 
 def setup_admin():
