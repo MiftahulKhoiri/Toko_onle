@@ -114,7 +114,14 @@ Status yang dipakai: `pending` (keranjang aktif) → `menunggu_pembayaran` → `
 
 **ProfilToko** (cuma 1 baris) — `id, nama_toko, tagline, deskripsi, alamat, maps_embed_url, jam_operasional, is_buka, kontak_wa, logo_url, banner_url, gofood_url, grabfood_url, shopeefood_url, instagram_url, tiktok_url, facebook_url, updated_at`
 
-< truncated lines 117-124 >
+**Testimoni** — `id, nama_pelanggan, rating, ulasan, foto_url, ditampilkan, user_id, created_at`
+
+## Instalasi
+
+1. Ekstrak project, lalu masuk ke folder root-nya (folder yang isinya ada `app/`, `setup.py`, `requirements.txt`):
+   ```bash
+   cd Toko_onle-main
+   ```
 
 2. (Opsional tapi disarankan) buat virtual environment:
    ```bash
