@@ -62,6 +62,19 @@ try:
 except sqlite3.OperationalError as e:
     print(f"- Lewati 'user_id' di testimoni: {e}")
 
+# 6. Tambah kolom reset_token_hash & reset_token_expires ke users (buat fitur "Lupa Password")
+try:
+    cur.execute("ALTER TABLE users ADD COLUMN reset_token_hash VARCHAR(64)")
+    print("✓ Kolom 'reset_token_hash' ditambahkan ke tabel 'users'")
+except sqlite3.OperationalError as e:
+    print(f"- Lewati 'reset_token_hash': {e}")
+
+try:
+    cur.execute("ALTER TABLE users ADD COLUMN reset_token_expires DATETIME")
+    print("✓ Kolom 'reset_token_expires' ditambahkan ke tabel 'users'")
+except sqlite3.OperationalError as e:
+    print(f"- Lewati 'reset_token_expires': {e}")
+
 conn.commit()
 conn.close()
 print("Selesai. Boleh hapus file ini setelah dijalankan.")
