@@ -12,6 +12,7 @@ Toko online untuk jualan bakso & aneka makanan lainnya. Dibangun dari nol pakai 
 - [Konfigurasi (.env)](#konfigurasi-env)
 - [Menjalankan Server](#menjalankan-server)
 - [Membuat Akun Admin](#membuat-akun-admin)
+- [Migrasi Database (Alembic)](#migrasi-database-alembic)
 - [Daftar Endpoint API](#daftar-endpoint-api)
 - [Alur Penggunaan](#alur-penggunaan)
 - [Catatan Midtrans](#catatan-midtrans)
@@ -21,6 +22,7 @@ Toko online untuk jualan bakso & aneka makanan lainnya. Dibangun dari nol pakai 
 ## Fitur
 
 - 🔐 Registrasi & login pembeli — email+password, No. HP+password, atau lewat **Google**/**Facebook** (JWT, token disimpan di `localStorage` browser)
+- 🔑 Lupa password (khusus akun berbasis email): link reset dikirim ke email, berlaku 30 menit & sekali pakai
 - 🍜 Katalog produk dengan pencarian instan, filter kategori, dan urutan (semua / terbaru / terlaris)
 - 📄 Halaman detail per produk, status **Ready** / **Pre-Order (PO)**
 - 🛒 Keranjang belanja (tambah, ubah jumlah, catatan per item, hapus item)
@@ -48,26 +50,31 @@ Toko online untuk jualan bakso & aneka makanan lainnya. Dibangun dari nol pakai 
 | Notifikasi | Email lewat SMTP (mis. Gmail), pakai `smtplib` bawaan Python |
 | Frontend | Jinja2 template + vanilla JS + CSS (server-rendered, bukan SPA) |
 | Konfigurasi | `python-dotenv` (baca file `.env`) |
+| Migrasi Database | Alembic — bandingkan `models.py` vs skema database, generate & jalankan migrasi otomatis |
 
 ## Struktur Folder
 
 ```
 Toko_onle-main/
+├── alembic/
+│   ├── env.py                 # konfigurasi Alembic (nunjuk ke models.py & database.py project ini)
+│   └── versions/               # file-file migrasi (auto-generate, jangan diedit manual)
+├── alembic.ini                 # config Alembic (dibuat lewat `alembic init alembic`)
 ├── app/
 │   ├── main.py               # entry point, daftar semua router
 │   ├── database.py           # koneksi SQLite + session
 │   ├── models.py             # model tabel: Produk, User, Alamat, Order, OrderItem, ProfilToko, Testimoni
 │   ├── schemas.py            # schema request/response (Pydantic)
-│   ├── security.py           # hash password, buat & decode JWT
+│   ├── security.py           # hash password, buat & decode JWT, token reset password
 │   ├── dependencies.py       # get_current_user & get_current_admin
 │   ├── rate_limit.py         # rate-limit sederhana (in-memory, cukup buat 1 proses/skala kecil)
 │   ├── order_status.py       # helper ubah status pesanan + trigger email
-│   ├── email_utils.py        # kirim email notifikasi lewat SMTP
+│   ├── email_utils.py        # kirim email notifikasi status pesanan & link reset password lewat SMTP
 │   ├── social_auth.py        # verifikasi token Google & Facebook
 │   ├── midtrans_client.py    # klien Midtrans Snap & Core API (dipakai bareng)
-│   ├── upload_utils.py       # validasi ISI file upload gambar (magic bytes)
+│   ├── upload_utils.py       # validasi ISI & ukuran file upload gambar (magic bytes, baca per-potongan)
 │   ├── routers/
-│   │   ├── auth.py           # register, login (email/HP/Google/Facebook), profil, foto profil
+│   │   ├── auth.py           # register, login (email/HP/Google/Facebook), lupa/reset password, profil, foto profil
 │   │   ├── produk.py         # CRUD produk + upload foto (admin)
 │   │   ├── keranjang.py      # keranjang belanja & metode pengiriman
 │   │   ├── alamat.py         # buku alamat pengiriman
@@ -76,17 +83,18 @@ Toko_onle-main/
 │   │   ├── admin.py          # kelola status semua pesanan (admin)
 │   │   ├── profil_toko.py    # profil toko publik + testimoni
 │   │   └── pages.py          # semua halaman HTML (Jinja2)
-│   ├── templates/            # index, detail_produk, login, register, keranjang, checkout_alamat,
-│   │                          # pesanan_saya, profil, profil_toko, admin_dashboard, admin_pesanan,
-│   │                          # admin_profil_toko, base
+│   ├── templates/            # index, detail_produk, login, register, lupa_password, reset_password,
+│   │                          # keranjang, checkout_alamat, pesanan_saya, profil, profil_toko,
+│   │                          # admin_dashboard, admin_pesanan, admin_profil_toko, base
 │   └── static/
 │       ├── css/style.css
 │       ├── js/main.js        # logika frontend bareng: token, toast, escapeHtml, formatErrorDetail, dst
 │       └── img/               # produk/, profil/, toko/, testimoni/ — semua auto-dibuat, isinya di-gitignore
 ├── setup.py                   # script sekali-jalan: buat .env + jadikan 1 akun sebagai admin
-├── migrasi.py                 # migrasi SATU KALI, cuma perlu kalau upgrade dari toko.db versi lama
-│                               # sebelum ada tabel alamat — instalasi baru TIDAK perlu jalankan ini
-├── requirements.txt
+├── migrasi.py                 # migrasi manual LAMA (sebelum pakai Alembic) — instalasi baru & yang
+│                               # sudah pakai Alembic TIDAK perlu jalankan ini lagi, lihat bagian
+│                               # Migrasi Database (Alembic)
+├── requirements.txt            # versi tiap dependency sudah dikunci (pinned) biar instalasi konsisten
 └── .env                        # kamu buat sendiri lewat setup.py, lihat bagian Konfigurasi
 ```
 
@@ -94,8 +102,8 @@ Toko_onle-main/
 
 **Produk** — `id, nama, deskripsi, harga, stok, kategori, gambar_url, is_ready, is_po, created_at`
 
-**User** — `id, nama, email, hashed_password, telepon, foto_url, google_sub, facebook_id, daftar_via, alamat_jalan, kelurahan, kecamatan, kota, provinsi, kode_pos, is_admin, created_at`
-Kolom `alamat_jalan`…`kode_pos` di tabel ini adalah alamat lama di profil (peninggalan versi awal) — alur checkout sekarang pakai tabel **Alamat** terpisah di bawah.
+**User** — `id, nama, email, hashed_password, telepon, foto_url, google_sub, facebook_id, daftar_via, reset_token_hash, reset_token_expires, alamat_jalan, kelurahan, kecamatan, kota, provinsi, kode_pos, is_admin, created_at`
+Kolom `alamat_jalan`…`kode_pos` di tabel ini adalah alamat lama di profil (peninggalan versi awal) — alur checkout sekarang pakai tabel **Alamat** terpisah di bawah. Kolom `reset_token_hash`/`reset_token_expires` dipakai buat fitur lupa password — nyimpen HASH token-nya doang, bukan token mentahnya.
 
 **Alamat** — `id, user_id, label, alamat_jalan, kelurahan, kecamatan, kota, provinsi, kode_pos, is_default, created_at`
 
@@ -106,14 +114,7 @@ Status yang dipakai: `pending` (keranjang aktif) → `menunggu_pembayaran` → `
 
 **ProfilToko** (cuma 1 baris) — `id, nama_toko, tagline, deskripsi, alamat, maps_embed_url, jam_operasional, is_buka, kontak_wa, logo_url, banner_url, gofood_url, grabfood_url, shopeefood_url, instagram_url, tiktok_url, facebook_url, updated_at`
 
-**Testimoni** — `id, nama_pelanggan, rating, ulasan, foto_url, ditampilkan, user_id, created_at`
-
-## Instalasi
-
-1. Ekstrak project, lalu masuk ke folder root-nya (folder yang isinya ada `app/`, `setup.py`, `requirements.txt`):
-   ```bash
-   cd Toko_onle-main
-   ```
+< truncated lines 117-124 >
 
 2. (Opsional tapi disarankan) buat virtual environment:
    ```bash
@@ -121,7 +122,7 @@ Status yang dipakai: `pending` (keranjang aktif) → `menunggu_pembayaran` → `
    source venv/bin/activate   # Windows: venv\Scripts\activate
    ```
 
-3. Install semua dependency:
+3. Install semua dependency (versinya sudah dikunci di `requirements.txt` biar instalasi konsisten di perangkat mana pun):
    ```bash
    pip install -r requirements.txt
    ```
@@ -140,6 +141,7 @@ File `.env` **tidak** ikut ter-commit (lihat `.gitignore`), jadi harus dibuat se
 | `SMTP_FROM_NAME` | Opsional | Nama pengirim yang muncul di email, default `Salome Cakyud`. |
 | `GOOGLE_CLIENT_ID` | Opsional | Dari Google Cloud Console (OAuth Client ID, tipe Web). Kosongin = tombol "Masuk dengan Google" otomatis disembunyikan. |
 | `FACEBOOK_APP_ID` / `FACEBOOK_APP_SECRET` | Opsional | Dari Facebook Developers Console. Kosongin = tombol "Masuk dengan Facebook" otomatis disembunyikan. |
+| `APP_BASE_URL` | Opsional | Default `http://localhost:8000`. Dipakai buat bikin link di email reset password (mis. `.../reset-password?token=...`) — **wajib diganti ke domain asli toko** begitu sudah online, kalau nggak link di email bakal nunjuk ke localhost. |
 
 ## Menjalankan Server
 
@@ -159,13 +161,36 @@ Nggak ada akun admin bawaan — semua akun awalnya pembeli biasa. Urutannya:
 
 Aman dijalankan berkali-kali; kalau sudah ada admin, akan ditanya dulu apa mau menambah admin lain atau dilewati.
 
+## Migrasi Database (Alembic)
+
+Perubahan skema (nambah kolom/tabel baru) sekarang dikelola pakai [Alembic](https://alembic.sqlalchemy.org/), bukan lagi nulis `ALTER TABLE` manual di `migrasi.py`.
+
+**Setup awal (sekali aja, kalau folder `alembic/` belum ada):**
+```bash
+alembic init alembic
+```
+Ganti isi `alembic/env.py` yang baru dibuat itu supaya nunjuk ke `app/models.py` & `app/database.py` project ini (lihat kode env.py yang sudah disiapkan). Setelah itu, karena tabel-tabel yang ada sekarang dibuat lewat `create_all()`/`migrasi.py`, tandai database sebagai sudah di titik awal TANPA menjalankan perubahan apa pun:
+```bash
+alembic revision --autogenerate -m "baseline"
+alembic stamp head
+```
+
+**Tiap kali nambah kolom/tabel baru** (`models.py` diubah):
+```bash
+alembic revision --autogenerate -m "deskripsi perubahannya"
+# cek dulu isi file migrasi barunya di alembic/versions/, baru:
+alembic upgrade head
+```
+
+`migrasi.py` dibiarkan ada buat catatan sejarah (upgrade dari versi sebelum ada tabel Alamat), tapi nggak perlu ditambah-tambah lagi mulai sekarang.
+
 ## Daftar Endpoint API
 
 Daftar lengkap & selalu up-to-date otomatis tersedia di `/docs` (Swagger UI) begitu server jalan. Ringkasannya per grup:
 
 | Prefix | Isi |
 |---|---|
-| `POST/GET /auth/...` | Register (email/HP), login (email/HP/Google/Facebook), profil sendiri, foto profil |
+| `POST/GET /auth/...` | Register (email/HP), login (email/HP/Google/Facebook), lupa/reset password, profil sendiri, foto profil |
 | `GET/POST/PUT/DELETE /produk/...` | Katalog produk (publik) + CRUD & upload foto (admin) |
 | `GET/POST/PUT/DELETE /keranjang/...` | Keranjang belanja & metode pengiriman (login) |
 | `GET/POST/PUT/DELETE /alamat/...` | Buku alamat pengiriman (login) |
@@ -199,6 +224,8 @@ Daftar lengkap & selalu up-to-date otomatis tersedia di `/docs` (Swagger UI) beg
 | Upload foto ditolak padahal filenya gambar | Format harus jpg/jpeg/png/webp DAN isi filenya beneran gambar (bukan cuma nama filenya yang diakhiri `.jpg`). Ukuran maks 3MB (foto profil) / 5MB (produk, toko, testimoni). |
 | Tombol "Masuk dengan Google"/"Facebook" nggak muncul | `GOOGLE_CLIENT_ID` / `FACEBOOK_APP_ID` belum diisi di `.env` — ini disengaja (fitur otomatis disembunyikan kalau belum disetel). |
 | Email notifikasi nggak terkirim | `SMTP_USER`/`SMTP_PASSWORD` kosong, atau (kalau Gmail) pakai password akun biasa — harus **App Password**. Cek juga folder Spam. |
+| Link reset password bilang "tidak valid atau kedaluwarsa" | Link cuma berlaku 30 menit & sekali pakai — minta link baru lewat `/lupa-password`. |
+| Akun daftar pakai No. HP doang nggak bisa reset password | Memang belum didukung — fitur lupa password sekarang cuma jalan buat akun yang punya email (belum ada integrasi SMS/WhatsApp OTP). |
 | Webhook Midtrans nggak pernah masuk | URL webhook belum didaftarkan/masih nunjuk ke `localhost` — lihat bagian [Catatan Midtrans](#catatan-midtrans). |
 
 ## Lisensi
