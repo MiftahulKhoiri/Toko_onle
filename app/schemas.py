@@ -149,6 +149,15 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 
+class LupaPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    password_baru: str = Field(..., min_length=8, max_length=128)
+
+
 # ---------- Alamat ----------
 class AlamatCreate(BaseModel):
     label: Optional[str] = Field("Rumah", max_length=50)
