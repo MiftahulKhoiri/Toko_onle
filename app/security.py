@@ -1,7 +1,9 @@
 # app/security.py
+import hashlib
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, Tuple
 
 from dotenv import load_dotenv
 from jose import JWTError, jwt
@@ -43,3 +45,17 @@ def decode_access_token(token: str) -> Optional[dict]:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+def buat_reset_token() -> Tuple[str, str]:
+    """Bikin token buat alur "Lupa Password": balikin (token_mentah, token_hash).
+    token_mentah dikirim ke user lewat email (bagian dari link reset), sedangkan
+    token_hash yang disimpan ke kolom users.reset_token_hash — sama seperti password,
+    kalau database sampai bocor, isi kolom itu nggak langsung bisa dipakai buat reset
+    password akun siapa aja tanpa tau token mentahnya."""
+    token_mentah = secrets.token_urlsafe(32)
+    return token_mentah, hash_reset_token(token_mentah)
+
+
+def hash_reset_token(token_mentah: str) -> str:
+    return hashlib.sha256(token_mentah.encode()).hexdigest()
