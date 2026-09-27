@@ -43,6 +43,13 @@ class User(Base):
     # Catatan cara akun ini pertama kali dibuat: "email" | "telepon" | "google" | "facebook"
     daftar_via = Column(String(20), nullable=False, default="email")
 
+    # Reset password: nyimpen HASH token-nya doang (bukan token mentah) — kalau database
+    # sampai bocor, isinya nggak langsung bisa dipakai buat reset password akun siapa aja.
+    # Ditimpa (overwrite) tiap kali user minta link baru, jadi otomatis bikin link lama
+    # nggak berlaku lagi. Lihat app/security.py (buat_reset_token) & routers/auth.py.
+    reset_token_hash = Column(String(64), nullable=True, index=True)
+    reset_token_expires = Column(DateTime(timezone=True), nullable=True)
+
     # --- Alamat lama di profil (dipertahankan, sudah nggak dipakai di alur checkout baru) ---
     alamat_jalan = Column(Text, nullable=True)
     kelurahan = Column(String(100), nullable=True)
@@ -56,6 +63,7 @@ class User(Base):
 
     orders = relationship("Order", back_populates="user")
     alamat_list = relationship("Alamat", back_populates="user")
+    testimoni_list = relationship("Testimoni", back_populates="user")
 
 
 class Alamat(Base):
@@ -82,14 +90,12 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     alamat_id = Column(Integer, ForeignKey("alamat.id"), nullable=True)
-    total_harga = Column(Float, nullable=False, default=0)
-    status = Column(String(20), default="pending")
-    payment_method = Column(String(50), nullable=True)
-    midtrans_order_id = Column(String(100), unique=True, nullable=True, index=True)
-
+    total_harga = Column(Float, nullable=False)
+    status = Column(String(20), default="menunggu_pembayaran")
+    payment_method = Column(String(30), nullable=True)
     metode_pengiriman = Column(String(20), default="diantar")
     ongkir = Column(Float, default=0)
-
+    midtrans_order_id = Column(String(100), unique=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="orders")
@@ -103,7 +109,7 @@ class OrderItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     produk_id = Column(Integer, ForeignKey("produk.id"), nullable=False)
-    jumlah = Column(Integer, nullable=False, default=1)
+    jumlah = Column(Integer, nullable=False)
     harga_saat_beli = Column(Float, nullable=False)
     catatan = Column(String(255), nullable=True)
 
@@ -112,43 +118,37 @@ class OrderItem(Base):
 
 
 class ProfilToko(Base):
-    """
-    Pengaturan halaman profil toko (landing publik yang dibuka lewat klik logo di navbar).
-    Cuma ada 1 baris data — dibuat otomatis kalau belum ada, lihat _get_or_create_profil
-    di routers/profil_toko.py.
-    """
     __tablename__ = "profil_toko"
 
     id = Column(Integer, primary_key=True, index=True)
-    nama_toko = Column(String(100), nullable=False, default="Salome Cakyud")
+    nama_toko = Column(String(100), nullable=False, default="Toko Salome Cakyud")
     tagline = Column(String(150), nullable=True)
     deskripsi = Column(Text, nullable=True)
-    alamat = Column(Text, nullable=True)
+    alamat = Column(String(500), nullable=True)
     maps_embed_url = Column(Text, nullable=True)
     jam_operasional = Column(String(100), nullable=True)
-    is_buka = Column(Boolean, default=True)  # status buka/tutup di-toggle manual oleh admin
+    is_buka = Column(Boolean, default=True)
     kontak_wa = Column(String(20), nullable=True)
     logo_url = Column(String(255), nullable=True)
     banner_url = Column(String(255), nullable=True)
-    gofood_url = Column(String(255), nullable=True)
-    grabfood_url = Column(String(255), nullable=True)
-    shopeefood_url = Column(String(255), nullable=True)
-    instagram_url = Column(String(255), nullable=True)
-    tiktok_url = Column(String(255), nullable=True)
-    facebook_url = Column(String(255), nullable=True)
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    gofood_url = Column(Text, nullable=True)
+    grabfood_url = Column(Text, nullable=True)
+    shopeefood_url = Column(Text, nullable=True)
+    instagram_url = Column(Text, nullable=True)
+    tiktok_url = Column(Text, nullable=True)
+    facebook_url = Column(Text, nullable=True)
 
 
 class Testimoni(Base):
     __tablename__ = "testimoni"
 
     id = Column(Integer, primary_key=True, index=True)
-    nama_pelanggan = Column(String(100), nullable=False)
-    rating = Column(Integer, nullable=False, default=5)
-    ulasan = Column(Text, nullable=False)
-    foto_url = Column(String(255), nullable=True)  # opsional: screenshot ulasan, atau foto produk dari pembeli
-    ditampilkan = Column(Boolean, default=True)  # admin bisa sembunyikan tanpa hapus
-    # NULL = testimoni ditambah manual oleh admin. Terisi = ulasan asli dari pembeli yang login,
-    # lewat POST /testimoni/kirim — otomatis ditampilkan=False sampai admin approve.
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    nama_pelanggan = Column(String(100), nullable=False)
+    rating = Column(Integer, nullable=False)
+    ulasan = Column(Text, nullable=False)
+    foto_url = Column(String(255), nullable=True)
+    ditampilkan = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", back_populates="testimoni_list")
