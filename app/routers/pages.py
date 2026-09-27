@@ -53,6 +53,20 @@ def register_page(request: Request):
     )
 
 
+@router.get("/lupa-password")
+def lupa_password_page(request: Request):
+    return templates.TemplateResponse(
+        request, "lupa_password.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
+@router.get("/reset-password")
+def reset_password_page(request: Request):
+    return templates.TemplateResponse(
+        request, "reset_password.html", {"nama_toko": NAMA_TOKO}
+    )
+
+
 @router.get("/keranjang-saya")
 def keranjang_page(request: Request):
     return templates.TemplateResponse(
