@@ -5,7 +5,30 @@ Ekstensi nama file (.jpg/.png/.webp) gampang dipalsukan — tinggal ganti akhira
 byte pertama file (magic number) ikut dicek di sini, biar nggak ada yang bisa upload file
 sembarangan (skrip, dll) yang cuma "menyamar" pakai nama berakhiran gambar.
 """
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
+
+UKURAN_CHUNK_BACA = 1024 * 1024  # baca per 1MB
+
+
+async def baca_upload_dengan_batas(file: UploadFile, batas_bytes: int, pesan_error: str) -> bytes:
+    """Baca isi UploadFile per-potongan (BUKAN sekali baca semua pakai `await file.read()`
+    tanpa argumen) dan LANGSUNG berhenti + tolak begitu totalnya kelewat batas.
+
+    Kalau dibiarkan baca sekaligus, orang bisa sengaja upload file raksasa (berapa pun
+    besarnya) dan server bakal coba nampung semuanya dulu ke RAM SEBELUM sempat ditolak —
+    celah DoS lewat kehabisan memori, apalagi di perangkat yang RAM-nya terbatas kayak
+    Raspberry Pi. Dengan cara ini, paling banyak cuma sekitar (batas_bytes + 1 potongan)
+    yang pernah nangkring di memori, berapa pun ukuran asli file yang diunggah."""
+    potongan_terkumpul = bytearray()
+    while True:
+        potongan = await file.read(UKURAN_CHUNK_BACA)
+        if not potongan:
+            break
+        potongan_terkumpul.extend(potongan)
+        if len(potongan_terkumpul) > batas_bytes:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=pesan_error)
+
+    return bytes(potongan_terkumpul)
 
 
 def pastikan_isi_gambar_valid(isi_file: bytes) -> None:
