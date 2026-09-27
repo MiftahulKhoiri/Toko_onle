@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.dependencies import get_current_admin
-from app.upload_utils import pastikan_isi_gambar_valid
+from app.upload_utils import baca_upload_dengan_batas, pastikan_isi_gambar_valid
 
 router = APIRouter(prefix="/produk", tags=["produk"])
 
@@ -45,9 +45,7 @@ async def upload_foto(
             detail="Format foto harus jpg, jpeg, png, atau webp",
         )
 
-    isi_file = await file.read()
-    if len(isi_file) > UKURAN_MAKS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Ukuran foto maksimal 5MB")
+    isi_file = await baca_upload_dengan_batas(file, UKURAN_MAKS, "Ukuran foto maksimal 5MB")
     pastikan_isi_gambar_valid(isi_file)
 
     nama_file = f"{uuid.uuid4().hex}{ekstensi}"
