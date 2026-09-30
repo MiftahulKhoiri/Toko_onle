@@ -1,0 +1,274 @@
+// app/static/js/profil_toko.js — logika halaman /profil-toko (landing publik toko)
+// Bergantung pada helper global di main.js: escapeHtml, formatErrorDetail
+
+/* ---------- Muat data & render semua bagian ---------- */
+
+async function muatProfilToko() {
+    try {
+        const [resProfil, resTestimoni] = await Promise.all([
+            fetch("/api/profil-toko"),
+            fetch("/testimoni"),
+        ]);
+
+        const profil = await resProfil.json();
+        const testimoniList = resTestimoni.ok ? await resTestimoni.json() : [];
+
+        renderHero(profil);
+        renderInfoBar(profil);
+        renderCta(profil);
+        renderTentang(profil);
+        renderMenu();
+        renderPeta(profil);
+        renderTestimoni(testimoniList);
+        renderSosial(profil);
+    } catch (err) {
+        document.getElementById("tp-hero").innerHTML = "<p class='tp-pesan-gagal'>Gagal memuat halaman profil toko.</p>";
+    }
+}
+
+/* ---------- Render per bagian ---------- */
+
+function renderHero(profil) {
+    const el = document.getElementById("tp-hero");
+    const bannerHtml = profil.banner_url
+        ? `<img src="${escapeHtml(profil.banner_url)}" class="tp-hero-banner" alt="">`
+        : "";
+    const logoHtml = profil.logo_url
+        ? `<img src="${escapeHtml(profil.logo_url)}" class="tp-logo" alt="Logo ${escapeHtml(profil.nama_toko)}">`
+        : "";
+
+    el.innerHTML = `
+        ${bannerHtml}
+        <div class="tp-hero-overlay">
+            ${logoHtml}
+            <div class="tp-nama-toko">${escapeHtml(profil.nama_toko)}</div>
+            ${profil.tagline ? `<div class="tp-tagline">${escapeHtml(profil.tagline)}</div>` : ""}
+        </div>
+    `;
+}
+
+function renderInfoBar(profil) {
+    const el = document.getElementById("tp-info-bar");
+    let html = profil.is_buka
+        ? `<span class="tp-status-pill tp-status-buka">🟢 Buka Sekarang</span>`
+        : `<span class="tp-status-pill tp-status-tutup">🔴 Tutup</span>`;
+
+    if (profil.jam_operasional) {
+        html += `<span class="tp-info-chip">🕒 ${escapeHtml(profil.jam_operasional)}</span>`;
+    }
+    if (profil.kontak_wa) {
+        html += `<span class="tp-info-chip">📱 ${escapeHtml(profil.kontak_wa)}</span>`;
+    }
+    el.innerHTML = html;
+}
+
+function renderCta(profil) {
+    const el = document.getElementById("tp-cta-row");
+    const nomorBersih = (profil.kontak_wa || "").replace(/[^0-9]/g, "");
+    let html = "";
+
+    if (nomorBersih) {
+        const pesan = encodeURIComponent(`Halo ${profil.nama_toko}, saya mau pesan.`);
+        html += `<a href="https://wa.me/${nomorBersih}?text=${pesan}" target="_blank" rel="noopener" class="tp-cta-wa">💬 Pesan Sekarang via WhatsApp</a>`;
+    }
+
+    const linkDelivery = [
+        profil.gofood_url ? { label: "🟢 GoFood", url: profil.gofood_url } : null,
+        profil.grabfood_url ? { label: "🟩 GrabFood", url: profil.grabfood_url } : null,
+        profil.shopeefood_url ? { label: "🧡 ShopeeFood", url: profil.shopeefood_url } : null,
+    ].filter(Boolean);
+
+    if (linkDelivery.length) {
+        html += `<div class="tp-cta-delivery">${linkDelivery
+            .map((l) => `<a href="${escapeHtml(l.url)}" target="_blank" rel="noopener">${l.label}</a>`)
+            .join("")}</div>`;
+    }
+
+    el.innerHTML = html;
+}
+
+function renderTentang(profil) {
+    const el = document.getElementById("tp-tentang");
+    if (!profil.deskripsi) { el.innerHTML = ""; return; }
+    el.innerHTML = `
+        <div class="tp-tentang">
+            <h2>Tentang Kami</h2>
+            <p>${escapeHtml(profil.deskripsi)}</p>
+        </div>
+    `;
+}
+
+function renderMenu() {
+    const el = document.getElementById("tp-menu");
+    el.innerHTML = `
+        <div class="tp-menu-cta">
+            <h2 class="tp-section-title">🍜 Menu &amp; Harga</h2>
+            <p>Cek semua menu bakso, jajanan, dan minuman kami — lengkap dengan foto dan harga.</p>
+            <a href="/" class="tp-menu-btn">Lihat Menu Lengkap →</a>
+        </div>
+    `;
+}
+
+function renderPeta(profil) {
+    const el = document.getElementById("tp-peta");
+    if (!profil.alamat && !profil.maps_embed_url) { el.innerHTML = ""; return; }
+
+    let html = `<h2 class="tp-section-title">📍 Lokasi Toko</h2><div class="tp-peta-wrap">`;
+    if (profil.maps_embed_url) {
+        html += `<iframe src="${escapeHtml(profil.maps_embed_url)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>`;
+    }
+    if (profil.alamat) {
+        html += `<p class="tp-alamat-teks">${escapeHtml(profil.alamat)}</p>`;
+    }
+    html += `</div>`;
+    el.innerHTML = html;
+}
+
+function renderTestimoni(testimoniList) {
+    const el = document.getElementById("tp-testimoni");
+    if (!testimoniList.length) { el.innerHTML = ""; return; }
+
+    let html = `<h2 class="tp-section-title">💬 Kata Pelanggan</h2><div class="tp-testimoni-grid">`;
+    for (const t of testimoniList) {
+        const bintang = "★".repeat(t.rating) + "☆".repeat(5 - t.rating);
+        const badgeHtml = t.user_id ? `<span class="tp-testimoni-badge">✅ Pembeli</span>` : "";
+        const fotoHtml = t.foto_url
+            ? `<img src="${escapeHtml(t.foto_url)}" alt="" class="tp-testimoni-foto">`
+            : "";
+        html += `
+        <div class="tp-testimoni-card">
+            ${fotoHtml}
+            <div class="tp-testimoni-rating">${bintang}${badgeHtml}</div>
+            <p class="tp-testimoni-ulasan">"${escapeHtml(t.ulasan)}"</p>
+            <p class="tp-testimoni-nama">— ${escapeHtml(t.nama_pelanggan)}</p>
+        </div>`;
+    }
+    html += `</div>`;
+    el.innerHTML = html;
+}
+
+function renderSosial(profil) {
+    const el = document.getElementById("tp-sosial");
+    const items = [
+        profil.instagram_url ? { icon: "📸", url: profil.instagram_url, label: "Instagram" } : null,
+        profil.tiktok_url ? { icon: "🎵", url: profil.tiktok_url, label: "TikTok" } : null,
+        profil.facebook_url ? { icon: "📘", url: profil.facebook_url, label: "Facebook" } : null,
+    ].filter(Boolean);
+
+    if (!items.length) { el.innerHTML = ""; return; }
+
+    el.innerHTML = `<div class="tp-sosial-row">${items
+        .map((i) => `<a href="${escapeHtml(i.url)}" target="_blank" rel="noopener" aria-label="${i.label}">${i.icon}</a>`)
+        .join("")}</div>`;
+}
+
+/* ---------- Form kirim ulasan pembeli ---------- */
+
+function renderKirimUlasan() {
+    const el = document.getElementById("tp-kirim-ulasan");
+    const token = localStorage.getItem("access_token");
+
+    if (!token) {
+        el.innerHTML = `
+            <div class="tp-kirim-box">
+                <h2 class="tp-section-title">✍️ Kasih Ulasan Kamu</h2>
+                <p class="tp-kirim-hint">Sudah pernah beli di sini? <a href="/login">Login dulu</a> buat kasih bintang &amp; ulasan.</p>
+            </div>`;
+        return;
+    }
+
+    el.innerHTML = `
+        <div class="tp-kirim-box">
+            <h2 class="tp-section-title">✍️ Kasih Ulasan Kamu</h2>
+            <form id="tp-kirim-form">
+                <div class="tp-rating-picker" id="tp-rating-picker">
+                    <span data-nilai="1">★</span><span data-nilai="2">★</span><span data-nilai="3">★</span><span data-nilai="4">★</span><span data-nilai="5">★</span>
+                </div>
+                <textarea id="tp-kirim-ulasan-teks" rows="3" placeholder="Gimana rasanya? Ceritain pengalaman kamu..." required></textarea>
+                <label for="tp-kirim-foto" class="tp-kirim-foto-label">📷 Tambah foto produk yang kamu beli (opsional)</label>
+                <input type="file" id="tp-kirim-foto" accept="image/png, image/jpeg, image/webp">
+                <img id="tp-kirim-foto-preview">
+                <button type="submit">Kirim Ulasan</button>
+            </form>
+            <p id="tp-kirim-msg"></p>
+        </div>`;
+
+    let ratingTerpilih = 5;
+    function renderRatingPicker() {
+        document.querySelectorAll("#tp-rating-picker span").forEach((s) => {
+            const nilai = parseInt(s.dataset.nilai, 10);
+            s.classList.toggle("aktif", nilai <= ratingTerpilih);
+            s.onclick = () => { ratingTerpilih = nilai; renderRatingPicker(); };
+        });
+    }
+    renderRatingPicker();
+
+    document.getElementById("tp-kirim-foto").addEventListener("change", (e) => {
+        const preview = document.getElementById("tp-kirim-foto-preview");
+        if (e.target.files && e.target.files[0]) {
+            preview.src = URL.createObjectURL(e.target.files[0]);
+            preview.style.display = "block";
+        } else {
+            preview.style.display = "none";
+        }
+    });
+
+    document.getElementById("tp-kirim-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const msg = document.getElementById("tp-kirim-msg");
+        msg.textContent = "";
+        msg.className = "";
+
+        try {
+            let fotoUrl = null;
+            const fotoFile = document.getElementById("tp-kirim-foto");
+            if (fotoFile.files && fotoFile.files[0]) {
+                const formData = new FormData();
+                formData.append("file", fotoFile.files[0]);
+                const resUpload = await fetch("/testimoni/upload-foto", {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                });
+                if (!resUpload.ok) {
+                    const err = await resUpload.json();
+                    throw new Error(formatErrorDetail(err.detail) || "Gagal upload foto");
+                }
+                const dataUpload = await resUpload.json();
+                fotoUrl = dataUpload.url;
+            }
+
+            const payload = {
+                rating: ratingTerpilih,
+                ulasan: document.getElementById("tp-kirim-ulasan-teks").value,
+                foto_url: fotoUrl,
+            };
+
+            const res = await fetch("/testimoni/kirim", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(formatErrorDetail(err.detail) || "Gagal mengirim ulasan");
+            }
+
+            msg.textContent = "Makasih! Ulasan kamu bakal tampil setelah dicek admin ya 🙏";
+            msg.className = "tp-kirim-sukses";
+            document.getElementById("tp-kirim-form").reset();
+            document.getElementById("tp-kirim-foto-preview").style.display = "none";
+            ratingTerpilih = 5;
+            renderRatingPicker();
+        } catch (err) {
+            msg.textContent = err.message || "Gagal mengirim ulasan";
+            msg.className = "tp-kirim-error";
+        }
+    });
+}
+
+/* ---------- Init ---------- */
+
+muatProfilToko();
+renderKirimUlasan();
