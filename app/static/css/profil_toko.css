@@ -1,0 +1,11 @@
+/* app/static/css/profil_toko.css — khusus halaman /profil-toko
+   (class tp-* lainnya masih ada di style.css) */
+
+/* Teks "Memuat..." di hero sebelum data tiba */
+.tp-loading { padding: 2rem; color: #8a7d68; }
+
+/* Pesan kalau profil toko gagal dimuat */
+.tp-pesan-gagal { padding: 2rem; }
+
+/* Foto screenshot di kartu testimoni */
+.tp-testimoni-foto { width: 100%; border-radius: 8px; margin-bottom: 0.6rem; display: block; }
