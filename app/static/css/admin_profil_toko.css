@@ -1,0 +1,75 @@
+/* app/static/css/admin_profil_toko.css — khusus halaman /panel-admin/profil-toko */
+
+/* Konten admin disembunyikan sampai cekAdmin() lolos (JS set display: block) */
+#admin-content { display: none; }
+
+/* Kotak form (profil toko & tambah testimoni) */
+.form-box.admin-form-box { max-width: 640px; margin: 1rem 0; }
+.form-box.form-box-testimoni { margin: 1.5rem 0; }
+
+/* Checkbox + label dalam satu baris */
+.form-box label.check-label {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+}
+
+.form-box .hint-text { font-size: 0.78rem; color: #666; margin-top: 0.2rem; }
+
+/* Judul tiap bagian di form profil */
+.form-box .form-section-title {
+    margin-top: 1.4rem;
+    font-size: 1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3rem;
+}
+
+.form-box label.label-mt-sm { margin-top: 0.6rem; }
+.form-box label.label-mt-xs { margin-top: 0.5rem; }
+
+/* Tombol submit */
+.form-box button.btn-simpan-profil { margin-top: 1.5rem; }
+.form-box button.btn-tambah-testimoni { margin-top: 1rem; }
+
+/* Pratinjau gambar (JS set display: block / none) */
+.preview-img { display: none; margin-top: 0.5rem; }
+.preview-logo { max-width: 100px; border-radius: 50%; }
+.preview-banner { max-width: 100%; border-radius: 8px; }
+.preview-foto { max-width: 120px; border-radius: 6px; }
+
+/* Modal edit testimoni (JS set display: flex / none) */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+}
+
+.form-box.modal-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+.modal-actions button { flex: 1; }
+.form-box button.btn-batal,
+.form-box button.btn-batal:hover { background: #6c757d; }
+
+/* Tabel daftar testimoni */
+.kolom-ulasan { max-width: 220px; }
+
+.keranjang-table button.btn-hapus,
+.keranjang-table button.btn-hapus:hover { background: #dc3545; color: white; }
