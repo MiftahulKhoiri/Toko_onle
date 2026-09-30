@@ -1,0 +1,5 @@
+/* app/static/css/index.css — khusus halaman utama (/)
+   (class produk-grid, produk-card, tab-urutan, dll masih ada di style.css) */
+
+/* Pesan "produk tidak ketemu" — JS set display: block / none saat filter pencarian */
+#cari-kosong { display: none; }
