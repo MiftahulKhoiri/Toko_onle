@@ -1,0 +1,198 @@
+// app/static/js/checkout_alamat.js — logika halaman /checkout/alamat
+// Bergantung pada helper global di main.js: escapeHtml, formatErrorDetail, showToast
+
+const token = localStorage.getItem("access_token");
+let ALAMAT_LIST = [];
+let ALAMAT_TERPILIH = null;
+
+/* ---------- Muat & tampilkan daftar alamat ---------- */
+
+async function muatAlamat() {
+    if (!token) {
+        document.getElementById("alamat-isi").innerHTML = '<p>Silakan <a href="/login">login</a> dulu.</p>';
+        return;
+    }
+    const res = await fetch("/alamat/", { headers: { Authorization: `Bearer ${token}` } });
+    ALAMAT_LIST = await res.json();
+
+    if (!ALAMAT_LIST.length) {
+        tampilkanForm(true);
+        return;
+    }
+
+    const defaultAlamat = ALAMAT_LIST.find((a) => a.is_default) || ALAMAT_LIST[0];
+    ALAMAT_TERPILIH = defaultAlamat.id;
+    renderPilihan();
+}
+
+function renderPilihan() {
+    let html = '<div class="alamat-list">';
+    for (const a of ALAMAT_LIST) {
+        const checked = a.id === ALAMAT_TERPILIH;
+        html += `
+        <label class="alamat-card ${checked ? "alamat-card-terpilih" : ""}">
+            <input type="radio" name="alamat" value="${a.id}" ${checked ? "checked" : ""} onchange="pilihAlamat(${a.id})">
+            <div class="alamat-card-isi">
+                <div class="alamat-card-atas">
+                    <strong>${escapeHtml(a.label)}</strong>
+                    ${a.is_default ? '<span class="badge-utama">Utama</span>' : ""}
+                </div>
+                <p>${escapeHtml([a.alamat_jalan, a.kelurahan, a.kecamatan, a.kota, a.provinsi, a.kode_pos].filter(Boolean).join(", "))}</p>
+                <div class="alamat-card-aksi">
+                    ${!a.is_default ? `<button type="button" onclick="jadikanUtama(${a.id})">Jadikan Utama</button>` : ""}
+                    <button type="button" class="alamat-hapus" onclick="hapusAlamat(${a.id})">Hapus</button>
+                </div>
+            </div>
+        </label>`;
+    }
+    html += `</div>
+    <button type="button" class="alamat-tambah-toggle" onclick="tampilkanForm(false)">+ Tambah Alamat Baru</button>
+    <div id="alamat-form-box"></div>
+    <button type="button" id="tombol-lanjut-bayar" onclick="lanjutBayar()">Lanjut ke Pembayaran</button>`;
+    document.getElementById("alamat-isi").innerHTML = html;
+}
+
+function pilihAlamat(id) {
+    ALAMAT_TERPILIH = id;
+    renderPilihan();
+}
+
+/* ---------- Form alamat baru ---------- */
+
+function formAlamatHtml() {
+    return `
+    <div class="form-box alamat-form">
+        <h2>Alamat Baru</h2>
+        <label>Label (mis. Rumah/Kantor)</label>
+        <input type="text" id="a-label" placeholder="Rumah">
+        <label>Alamat Lengkap (Jalan, No. Rumah, RT/RW)</label>
+        <textarea id="a-jalan" rows="2" required></textarea>
+        <label>Kelurahan/Desa</label>
+        <input type="text" id="a-kelurahan">
+        <label>Kecamatan</label>
+        <input type="text" id="a-kecamatan">
+        <label>Kota/Kabupaten</label>
+        <input type="text" id="a-kota" required>
+        <label>Provinsi</label>
+        <input type="text" id="a-provinsi">
+        <label>Kode Pos</label>
+        <input type="text" id="a-kodepos">
+        <button type="button" onclick="simpanAlamatBaru()">Simpan Alamat</button>
+    </div>`;
+}
+
+function tampilkanForm(kosong) {
+    if (kosong) {
+        document.getElementById("alamat-isi").innerHTML = `
+            <p class="alamat-kosong-info">Belum ada alamat tersimpan, isi dulu ya.</p>
+            ${formAlamatHtml()}`;
+    } else {
+        const box = document.getElementById("alamat-form-box");
+        box.innerHTML = formAlamatHtml();
+        box.style.display = "block";
+    }
+}
+
+async function simpanAlamatBaru() {
+    const msg = document.getElementById("alamat-msg");
+    msg.textContent = "";
+
+    const body = {
+        label: document.getElementById("a-label").value || "Rumah",
+        alamat_jalan: document.getElementById("a-jalan").value,
+        kelurahan: document.getElementById("a-kelurahan").value || null,
+        kecamatan: document.getElementById("a-kecamatan").value || null,
+        kota: document.getElementById("a-kota").value,
+        provinsi: document.getElementById("a-provinsi").value || null,
+        kode_pos: document.getElementById("a-kodepos").value || null,
+    };
+
+    if (!body.alamat_jalan || !body.kota) {
+        msg.textContent = "Alamat lengkap & kota wajib diisi";
+        return;
+    }
+
+    const res = await fetch("/alamat/", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        msg.textContent = formatErrorDetail(err.detail) || "Gagal menyimpan alamat";
+        return;
+    }
+
+    const alamatBaru = await res.json();
+    await muatAlamat();
+    ALAMAT_TERPILIH = alamatBaru.id;
+    renderPilihan();
+    showToast("Alamat berhasil disimpan");
+}
+
+/* ---------- Jadikan utama & hapus ---------- */
+
+async function jadikanUtama(id) {
+    const res = await fetch(`/alamat/${id}/utama`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+        showToast("Gagal menjadikan alamat ini utama", "error");
+        return;
+    }
+    await muatAlamat();
+}
+
+async function hapusAlamat(id) {
+    if (!confirm("Hapus alamat ini?")) return;
+    const res = await fetch(`/alamat/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+        showToast("Gagal menghapus alamat", "error");
+        return;
+    }
+    await muatAlamat();
+}
+
+/* ---------- Lanjut ke pembayaran ---------- */
+
+async function lanjutBayar() {
+    const msg = document.getElementById("alamat-msg");
+    msg.textContent = "";
+
+    if (!ALAMAT_TERPILIH) {
+        msg.textContent = "Pilih atau tambah alamat dulu";
+        return;
+    }
+
+    // Cegah dobel klik/submit yang bisa bikin 2 transaksi Midtrans dari keranjang yang sama.
+    const tombol = document.getElementById("tombol-lanjut-bayar");
+    if (tombol) { tombol.disabled = true; tombol.textContent = "Memproses..."; }
+
+    try {
+        const res = await fetch("/payment/checkout", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ alamat_id: ALAMAT_TERPILIH }),
+        });
+
+        if (!res.ok) {
+            const err = await res.json();
+            msg.textContent = formatErrorDetail(err.detail) || "Checkout gagal";
+            return;
+        }
+
+        const data = await res.json();
+        window.location.href = data.redirect_url;
+    } finally {
+        if (tombol) { tombol.disabled = false; tombol.textContent = "Lanjut ke Pembayaran"; }
+    }
+}
+
+/* ---------- Init ---------- */
+
+muatAlamat();
