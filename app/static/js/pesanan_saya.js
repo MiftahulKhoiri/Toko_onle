@@ -1,0 +1,109 @@
+// app/static/js/pesanan_saya.js — logika halaman /pesanan-saya
+// Bergantung pada helper global di main.js: escapeHtml, formatErrorDetail, showToast
+
+const token = localStorage.getItem("access_token");
+
+const LABEL_STATUS = {
+    menunggu_pembayaran: "Menunggu Pembayaran",
+    dibayar: "Dibayar",
+    diproses: "Diproses",
+    selesai: "Selesai",
+    batal: "Dibatalkan",
+};
+
+const LABEL_PENGIRIMAN = {
+    diantar: "🛵 Diantar",
+    ambil_sendiri: "🏪 Ambil Sendiri",
+};
+
+function kelasStatus(status) {
+    return "status-pill status-" + status;
+}
+
+/* ---------- Muat & tampilkan daftar pesanan ---------- */
+
+async function muatPesanan() {
+    const container = document.getElementById("pesanan-isi");
+
+    if (!token) {
+        container.innerHTML = '<p>Silakan <a href="/login">login</a> dulu buat lihat pesanan.</p>';
+        return;
+    }
+
+    const res = await fetch("/pesanan/", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        container.innerHTML = "<p>Gagal memuat pesanan. Coba login ulang.</p>";
+        return;
+    }
+    const pesananList = await res.json();
+
+    if (!pesananList.length) {
+        container.innerHTML = '<p>Belum ada pesanan. <a href="/">Yuk mulai belanja</a>.</p>';
+        return;
+    }
+
+    let html = '<div class="pesanan-list">';
+    for (const p of pesananList) {
+        const tanggal = new Date(p.created_at).toLocaleString("id-ID", {
+            day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
+        });
+        const labelStatus = escapeHtml(LABEL_STATUS[p.status] || p.status);
+        const labelPengiriman = escapeHtml(LABEL_PENGIRIMAN[p.metode_pengiriman] || p.metode_pengiriman);
+        // escapeHtml() (didefinisikan di main.js) buat jaga-jaga catatan/alamat yang user isi sendiri
+        // nggak nyuntik HTML ke halaman pesanannya sendiri.
+        const alamatHtml = (p.metode_pengiriman === "diantar" && p.alamat)
+            ? ` — ${escapeHtml([p.alamat.alamat_jalan, p.alamat.kelurahan, p.alamat.kecamatan, p.alamat.kota].filter(Boolean).join(", "))}`
+            : "";
+
+        let itemsHtml = "";
+        for (const item of p.items) {
+            const namaProduk = escapeHtml(item.produk ? item.produk.nama : "-");
+            const catatanHtml = item.catatan ? `<br><small class="item-catatan">📝 ${escapeHtml(item.catatan)}</small>` : "";
+            itemsHtml += `<li><span>${item.jumlah}x ${namaProduk}${catatanHtml}</span><span class="mono">Rp${(item.harga_saat_beli * item.jumlah).toLocaleString("id-ID")}</span></li>`;
+        }
+
+        const tombolBatalkan = p.status === "menunggu_pembayaran"
+            ? `<button type="button" class="pesanan-batalkan" onclick="batalkanPesanan(${p.id})">Batalkan Pesanan</button>`
+            : "";
+
+        html += `
+        <div class="pesanan-card">
+            <div class="pesanan-header">
+                <div>
+                    <strong>Pesanan #${p.id}</strong>
+                    <p class="pesanan-tanggal">${tanggal} · ${labelPengiriman}${alamatHtml}</p>
+                </div>
+                <span class="${kelasStatus(p.status)}">${labelStatus}</span>
+            </div>
+            <ul class="pesanan-items">${itemsHtml}</ul>
+            ${p.ongkir > 0 ? `<p class="pesanan-ongkir mono">Ongkir: Rp${p.ongkir.toLocaleString("id-ID")}</p>` : ""}
+            <p class="pesanan-total mono">Total: Rp${p.total_harga.toLocaleString("id-ID")}</p>
+            ${tombolBatalkan}
+        </div>`;
+    }
+    html += "</div>";
+    container.innerHTML = html;
+}
+
+/* ---------- Batalkan pesanan ---------- */
+
+async function batalkanPesanan(orderId) {
+    if (!confirm("Yakin mau batalkan pesanan ini?")) return;
+
+    const res = await fetch(`/pesanan/${orderId}/batalkan`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (res.ok) {
+        showToast("Pesanan berhasil dibatalkan");
+    } else {
+        const err = await res.json();
+        showToast(formatErrorDetail(err.detail) || "Gagal membatalkan pesanan", "error");
+    }
+    muatPesanan();
+}
+
+/* ---------- Init ---------- */
+
+muatPesanan();
