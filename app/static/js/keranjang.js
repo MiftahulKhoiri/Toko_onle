@@ -1,0 +1,188 @@
+// app/static/js/keranjang.js — logika halaman /keranjang-saya
+// Bergantung pada helper global di main.js: escapeHtml, formatErrorDetail, showToast, updateCartBadge
+
+let CART_CACHE = null;
+
+/* ---------- Muat & tampilkan keranjang ---------- */
+
+async function muatKeranjang() {
+    const token = localStorage.getItem("access_token");
+    const container = document.getElementById("keranjang-isi");
+
+    if (!token) {
+        container.innerHTML = '<p>Silakan <a href="/login">login</a> dulu buat lihat keranjang.</p>';
+        return;
+    }
+
+    const res = await fetch("/keranjang/", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        container.innerHTML = '<p>Gagal memuat keranjang. Coba login ulang.</p>';
+        return;
+    }
+    const cart = await res.json();
+    CART_CACHE = cart;
+
+    if (!cart.items.length) {
+        container.innerHTML = '<p>Keranjang masih kosong. <a href="/">Yuk pilih menu dulu</a>.</p>';
+        return;
+    }
+
+    const subtotal = cart.items.reduce((sum, item) => sum + item.harga_saat_beli * item.jumlah, 0);
+
+    let html = `
+    <div class="pengiriman-pilih">
+        <label class="pengiriman-opsi">
+            <input type="radio" name="pengiriman" value="diantar" ${cart.metode_pengiriman === "diantar" ? "checked" : ""} onchange="ubahPengiriman('diantar')">
+            🛵 Diantar <span class="mono">(+Rp${(15000).toLocaleString("id-ID")})</span>
+        </label>
+        <label class="pengiriman-opsi">
+            <input type="radio" name="pengiriman" value="ambil_sendiri" ${cart.metode_pengiriman === "ambil_sendiri" ? "checked" : ""} onchange="ubahPengiriman('ambil_sendiri')">
+            🏪 Ambil Sendiri <span class="mono">(Gratis)</span>
+        </label>
+    </div>
+    <div class="cart-list">`;
+
+    for (const item of cart.items) {
+        const subtotalItem = item.harga_saat_beli * item.jumlah;
+        const nama = escapeHtml(item.produk ? item.produk.nama : "-");
+        const foto = item.produk && item.produk.gambar_url
+            ? `<img src="${escapeHtml(item.produk.gambar_url)}" class="keranjang-thumb">`
+            : `<div class="keranjang-thumb keranjang-thumb-kosong">🥣</div>`;
+
+        html += `
+        <div class="cart-item">
+            <div class="cart-item-top">
+                ${foto}
+                <div class="cart-item-info">
+                    <h3>${nama}</h3>
+                    <p class="mono">Rp${item.harga_saat_beli.toLocaleString("id-ID")}</p>
+                </div>
+                <button type="button" class="cart-item-hapus" onclick="hapusItem(${item.id})" aria-label="Hapus ${nama}">✕</button>
+            </div>
+            <div class="cart-item-bottom">
+                <div class="stepper">
+                    <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah - 1})" ${item.jumlah <= 1 ? "disabled" : ""}>−</button>
+                    <span>${item.jumlah}</span>
+                    <button type="button" onclick="ubahJumlah(${item.id}, ${item.produk_id}, ${item.jumlah + 1})">+</button>
+                </div>
+                <p class="cart-item-subtotal mono">Rp${subtotalItem.toLocaleString("id-ID")}</p>
+            </div>
+            <input
+                type="text"
+                class="catatan-input"
+                placeholder="Catatan (opsional, mis: tanpa bawang)"
+                value="${escapeHtml(item.catatan)}"
+                onchange="ubahCatatan(${item.id}, ${item.produk_id}, ${item.jumlah}, this.value)"
+            >
+        </div>`;
+    }
+    html += "</div>";
+
+    html += `
+    <div class="ringkasan-total">
+        <p><span>Subtotal</span><span class="mono">Rp${subtotal.toLocaleString("id-ID")}</span></p>
+        <p><span>Ongkir</span><span class="mono">Rp${cart.ongkir.toLocaleString("id-ID")}</span></p>
+        <p class="total"><span>Total</span><span class="mono">Rp${cart.total_harga.toLocaleString("id-ID")}</span></p>
+    </div>
+    <button id="tombol-checkout" onclick="checkout()">Checkout</button>`;
+    container.innerHTML = html;
+}
+
+/* ---------- Ubah pengiriman, jumlah, catatan, hapus item ---------- */
+
+async function ubahPengiriman(metode) {
+    const token = localStorage.getItem("access_token");
+    await fetch("/keranjang/pengiriman", {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ metode_pengiriman: metode }),
+    });
+    muatKeranjang();
+}
+
+async function ubahJumlah(itemId, produkId, jumlahBaru) {
+    const msg = document.getElementById("keranjang-msg");
+    msg.textContent = "";
+
+    if (jumlahBaru < 1) return;
+
+    const itemLama = CART_CACHE ? CART_CACHE.items.find((i) => i.id === itemId) : null;
+    const catatan = itemLama ? itemLama.catatan : null;
+
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(`/keranjang/items/${itemId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahBaru, catatan }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        msg.textContent = formatErrorDetail(err.detail) || "Gagal mengubah jumlah";
+    }
+
+    muatKeranjang();
+    updateCartBadge();
+}
+
+async function ubahCatatan(itemId, produkId, jumlah, catatanBaru) {
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(`/keranjang/items/${itemId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ produk_id: produkId, jumlah, catatan: catatanBaru }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        showToast(formatErrorDetail(err.detail) || "Gagal menyimpan catatan", "error");
+        return;
+    }
+    showToast("Catatan disimpan");
+}
+
+async function hapusItem(itemId) {
+    const token = localStorage.getItem("access_token");
+    await fetch(`/keranjang/items/${itemId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    muatKeranjang();
+    updateCartBadge();
+}
+
+/* ---------- Checkout ---------- */
+
+async function checkout() {
+    if (CART_CACHE && CART_CACHE.metode_pengiriman === "diantar") {
+        window.location.href = "/checkout/alamat";
+        return;
+    }
+
+    // Cegah dobel klik/submit yang bisa bikin 2 transaksi Midtrans dari keranjang yang sama.
+    const tombol = document.getElementById("tombol-checkout");
+    if (tombol) { tombol.disabled = true; tombol.textContent = "Memproses..."; }
+
+    try {
+        // Ambil Sendiri: nggak butuh alamat, langsung checkout
+        const token = localStorage.getItem("access_token");
+        const res = await fetch("/payment/checkout", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ alamat_id: null }),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            showToast(formatErrorDetail(err.detail) || "Checkout gagal", "error");
+            return;
+        }
+        const data = await res.json();
+        window.location.href = data.redirect_url;
+    } finally {
+        if (tombol) { tombol.disabled = false; tombol.textContent = "Checkout"; }
+    }
+}
+
+/* ---------- Init ---------- */
+
+muatKeranjang();
