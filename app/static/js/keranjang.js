@@ -163,6 +163,9 @@ async function checkout() {
     const tombol = document.getElementById("tombol-checkout");
     if (tombol) { tombol.disabled = true; tombol.textContent = "Memproses..."; }
 
+    // Kalau checkout berhasil, tombol dibiarkan nonaktif selama browser pindah ke Midtrans.
+    let berhasil = false;
+
     try {
         // Ambil Sendiri: nggak butuh alamat, langsung checkout
         const token = localStorage.getItem("access_token");
@@ -177,9 +180,10 @@ async function checkout() {
             return;
         }
         const data = await res.json();
+        berhasil = true;
         window.location.href = data.redirect_url;
     } finally {
-        if (tombol) { tombol.disabled = false; tombol.textContent = "Checkout"; }
+        if (tombol && !berhasil) { tombol.disabled = false; tombol.textContent = "Checkout"; }
     }
 }
 
