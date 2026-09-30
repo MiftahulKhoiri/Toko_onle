@@ -1,6 +1,7 @@
 # app/routers/payment.py
 import hashlib
 import hmac
+import logging
 import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -11,6 +12,8 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.midtrans_client import SERVER_KEY, core_api, pastikan_midtrans_terkonfigurasi, snap
 from app.order_status import mark_as_cancelled, mark_as_paid
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/payment", tags=["payment"])
 
@@ -26,6 +29,50 @@ def _get_pending_cart(db: Session, user: models.User) -> models.Order:
     return cart
 
 
+def _batalkan_klaim_checkout(
+    db: Session,
+    cart_id: int,
+    alamat_id_lama: int | None,
+    items_stok: list[tuple[int, int, str]],
+) -> None:
+    """Kembalikan keadaan sebelum checkout kalau transaksi Midtrans gagal dibuat.
+
+    Urutannya sengaja: balikin status pesanan DULU dengan syarat statusnya masih
+    "menunggu_pembayaran". Stok baru dikembalikan kalau pesanan memang berhasil dibalikin,
+    supaya stok nggak ke-restock dua kali kalau status pesanan sudah berubah dari jalur lain.
+
+    Kalau langkah pemulihan ini sendiri gagal (mis. database bermasalah), pesanan tetap
+    "menunggu_pembayaran" dengan stok terpotong — pembeli masih bisa membatalkannya lewat
+    Pesanan Saya, dan pembatalan itu yang akan mengembalikan stok. Jadi arah gagalnya aman
+    (stok tidak hilang permanen).
+    """
+    try:
+        baris_pesanan = (
+            db.query(models.Order)
+            .filter(models.Order.id == cart_id, models.Order.status == "menunggu_pembayaran")
+            .update(
+                {
+                    models.Order.status: "pending",
+                    models.Order.payment_method: None,
+                    models.Order.midtrans_order_id: None,
+                    models.Order.alamat_id: alamat_id_lama,
+                },
+                synchronize_session=False,
+            )
+        )
+        if baris_pesanan == 1:
+            for produk_id, jumlah, _nama in items_stok:
+                (
+                    db.query(models.Produk)
+                    .filter(models.Produk.id == produk_id)
+                    .update({models.Produk.stok: models.Produk.stok + jumlah}, synchronize_session=False)
+                )
+        db.commit()
+    except Exception:
+        db.rollback()
+        logger.exception("Gagal memulihkan keranjang %s setelah Midtrans gagal", cart_id)
+
+
 @router.post("/checkout")
 def checkout(
     data: schemas.CheckoutRequest,
@@ -35,6 +82,7 @@ def checkout(
     cart = _get_pending_cart(db, current_user)
     pastikan_midtrans_terkonfigurasi()
 
+    # ---- Validasi (baca saja, belum ada yang diubah di database) ----
     if cart.metode_pengiriman == "diantar":
         if not data.alamat_id:
             raise HTTPException(
@@ -48,9 +96,9 @@ def checkout(
         )
         if not alamat:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alamat tidak ditemukan")
-        cart.alamat_id = alamat.id
+        alamat_id_baru = alamat.id
     else:
-        cart.alamat_id = None
+        alamat_id_baru = None
 
     for item in cart.items:
         if not item.produk:
@@ -61,31 +109,15 @@ def checkout(
                 detail="Salah satu produk di keranjang sudah tidak tersedia, silakan hapus item tersebut dulu",
             )
 
-    # Kurangi stok tiap item lewat UPDATE atomic (stok = stok - jumlah, DENGAN SYARAT
-    # stok >= jumlah, dicek di level SQL) — bukan baca-nilai-di-Python-lalu-tulis-belakangan
-    # seperti sebelumnya. Cara lama itu rawan race condition: kalau ada 2 checkout barengan
-    # buat produk yang sama, dua-duanya bisa "ngerasa" stok masih cukup karena sama-sama baca
-    # nilai lama sebelum salah satunya kepotong duluan, hasilnya stok bisa minus/oversell.
-    for item in cart.items:
-        baris_terupdate = (
-            db.query(models.Produk)
-            .filter(models.Produk.id == item.produk_id, models.Produk.stok >= item.jumlah)
-            .update({models.Produk.stok: models.Produk.stok - item.jumlah}, synchronize_session=False)
-        )
-        if baris_terupdate == 0:
-            # Batalkan (rollback) semua pengurangan stok item-item sebelumnya di loop checkout
-            # ini juga — belum ada db.commit() sama sekali sejak awal fungsi ini, jadi rollback
-            # aman ngembaliin semuanya ke kondisi awal.
-            db.rollback()
-            stok_sekarang = (
-                db.query(models.Produk.stok).filter(models.Produk.id == item.produk_id).scalar()
-            )
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Stok {item.produk.nama} tidak cukup, sisa: {stok_sekarang or 0}",
-            )
+    # ---- Siapkan semua data SEBELUM transaksi database dimulai ----
+    # Semua nilai diambil ke variabel biasa di sini, jadi setelah db.commit() nanti kita nggak
+    # perlu menyentuh objek ORM lagi (yang otomatis "kedaluwarsa" setelah commit).
+    cart_id = cart.id
+    alamat_id_lama = cart.alamat_id
+    metode_pengiriman = cart.metode_pengiriman
+    items_stok = [(item.produk_id, item.jumlah, item.produk.nama) for item in cart.items]
 
-    order_id = f"cakyud-{cart.id}-{secrets.token_hex(4)}"
+    order_id = f"cakyud-{cart_id}-{secrets.token_hex(4)}"
     ongkir = int(cart.ongkir or 0)
     gross_amount = int(sum(item.harga_saat_beli * item.jumlah for item in cart.items)) + ongkir
 
@@ -103,7 +135,7 @@ def checkout(
             "id": "ongkir",
             "price": ongkir,
             "quantity": 1,
-            "name": f"Ongkos Kirim ({cart.metode_pengiriman})",
+            "name": f"Ongkos Kirim ({metode_pengiriman})",
         })
 
     # email/telepon sekarang boleh kosong (akun Google tanpa email publik, akun
@@ -121,21 +153,64 @@ def checkout(
         "item_details": item_details,
     }
 
+    # ---- Tahap 1: klaim keranjang + potong stok, satu transaksi singkat ----
+    # Klaim lewat UPDATE bersyarat (WHERE status = 'pending'): database menjamin hanya SATU
+    # request yang dapat rowcount = 1. Kalau ada checkout lain yang barengan (dobel klik, dua
+    # tab, dst) dan sudah keburu mengklaim, yang ini ditolak di sini — sebelum stok disentuh
+    # dan sebelum bikin transaksi Midtrans kedua. Cek "status masih pending" di
+    # _get_pending_cart() di atas saja tidak cukup, karena selisih waktu antara cek itu dan
+    # penulisan ke database cukup buat request lain menyelip.
+    klaim = (
+        db.query(models.Order)
+        .filter(models.Order.id == cart_id, models.Order.status == "pending")
+        .update(
+            {
+                models.Order.status: "menunggu_pembayaran",
+                models.Order.payment_method: "midtrans",
+                models.Order.midtrans_order_id: order_id,
+                models.Order.alamat_id: alamat_id_baru,
+            },
+            synchronize_session=False,
+        )
+    )
+    if klaim == 0:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Pesanan dari keranjang ini sedang diproses atau sudah dibuat. Cek menu Pesanan Saya.",
+        )
+
+    # Kurangi stok tiap item lewat UPDATE atomic (stok = stok - jumlah, DENGAN SYARAT
+    # stok >= jumlah, dicek di level SQL) — bukan baca-nilai-di-Python-lalu-tulis-belakangan.
+    # Rollback di bawah ikut membatalkan klaim di atas, jadi keranjang balik ke "pending".
+    for produk_id, jumlah, nama in items_stok:
+        baris_terupdate = (
+            db.query(models.Produk)
+            .filter(models.Produk.id == produk_id, models.Produk.stok >= jumlah)
+            .update({models.Produk.stok: models.Produk.stok - jumlah}, synchronize_session=False)
+        )
+        if baris_terupdate == 0:
+            db.rollback()
+            stok_sekarang = db.query(models.Produk.stok).filter(models.Produk.id == produk_id).scalar()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Stok {nama} tidak cukup, sisa: {stok_sekarang or 0}",
+            )
+
+    # Commit di sini melepas kunci database SEBELUM menunggu Midtrans (bisa beberapa detik),
+    # jadi request lain nggak ikut macet menunggu.
+    db.commit()
+
+    # ---- Tahap 2: bikin transaksi di Midtrans (di luar transaksi database) ----
     try:
         transaction = snap.create_transaction(param)
     except Exception:
-        # Gagal bikin transaksi di Midtrans (mis. Midtrans down/error) -> jangan lanjut,
-        # rollback biar stok yang tadi udah dipotong di atas balik lagi, nggak hilang percuma.
-        db.rollback()
+        logger.exception("Midtrans gagal membuat transaksi untuk keranjang %s", cart_id)
+        _batalkan_klaim_checkout(db, cart_id, alamat_id_lama, items_stok)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Gagal membuat transaksi pembayaran, coba lagi",
         )
-
-    cart.status = "menunggu_pembayaran"
-    cart.payment_method = "midtrans"
-    cart.midtrans_order_id = order_id
-    db.commit()
 
     return {
         "snap_token": transaction["token"],
