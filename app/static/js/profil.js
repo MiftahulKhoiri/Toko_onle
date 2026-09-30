@@ -1,5 +1,5 @@
 // app/static/js/profil.js — logika halaman /profil
-// Bergantung pada helper global di main.js: formatErrorDetail, showToast, renderNavAuth
+// Bergantung pada helper global di main.js: escapeHtml, formatErrorDetail, showToast, renderNavAuth
 
 const token = localStorage.getItem("access_token");
 
@@ -116,7 +116,7 @@ async function loadProfil() {
         const avatarEl = document.getElementById("profil-avatar");
         const btnHapusFoto = document.getElementById("btn-hapus-foto");
         if (user.foto_url) {
-            avatarEl.innerHTML = `<img src="${user.foto_url}" alt="Foto profil">`;
+            avatarEl.innerHTML = `<img src="${escapeHtml(user.foto_url)}" alt="Foto profil">`;
             avatarEl.classList.add("profil-avatar-ada-foto");
             btnHapusFoto.style.display = "inline-block";
         } else {
