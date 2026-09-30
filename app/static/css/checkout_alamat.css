@@ -1,0 +1,13 @@
+/* app/static/css/checkout_alamat.css — khusus halaman /checkout/alamat
+   (class alamat-card, alamat-list, dll masih ada di style.css) */
+
+/* Kotak form alamat baru (di-render JS) — JS set display: block saat dibuka */
+#alamat-form-box { display: none; }
+
+.form-box.alamat-form { max-width: 100%; margin: 1rem 0; }
+
+/* Teks info saat belum ada alamat tersimpan */
+.alamat-kosong-info { margin-bottom: 1rem; }
+
+/* Tombol lanjut bayar */
+#tombol-lanjut-bayar { margin-top: 1.2rem; }
