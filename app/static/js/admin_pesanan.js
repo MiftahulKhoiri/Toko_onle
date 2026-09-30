@@ -1,0 +1,127 @@
+// app/static/js/admin_pesanan.js — logika halaman /panel-admin/pesanan (kelola pesanan)
+// Bergantung pada helper global di main.js: escapeHtml, showToast
+
+const token = localStorage.getItem("access_token");
+const STATUS_OPSI = ["menunggu_pembayaran", "dibayar", "diproses", "selesai", "batal"];
+const LABEL_PENGIRIMAN = {
+    diantar: "🛵 Diantar",
+    ambil_sendiri: "🏪 Ambil Sendiri",
+};
+const PER_HALAMAN = 10;
+let halamanPesanan = 1;
+
+/* ---------- Cek akses admin ---------- */
+
+async function cekAdmin() {
+    const checkDiv = document.getElementById("admin-check");
+    if (!token) {
+        checkDiv.innerHTML = '<p>Silakan <a href="/login">login</a> dulu.</p>';
+        return false;
+    }
+    const res = await fetch("/auth/me", { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) {
+        checkDiv.innerHTML = '<p>Sesi habis, silakan <a href="/login">login</a> lagi.</p>';
+        return false;
+    }
+    const user = await res.json();
+    if (!user.is_admin) {
+        checkDiv.innerHTML = "<p>Akses ditolak — halaman ini khusus admin.</p>";
+        return false;
+    }
+    document.getElementById("pesanan-list").style.display = "block";
+    return true;
+}
+
+/* ---------- Daftar pesanan & pagination ---------- */
+
+async function muatPesanan() {
+    const container = document.getElementById("pesanan-list");
+    const skip = (halamanPesanan - 1) * PER_HALAMAN;
+    const res = await fetch(`/admin/pesanan?skip=${skip}&limit=${PER_HALAMAN}`, { headers: { Authorization: `Bearer ${token}` } });
+    const pesananList = await res.json();
+
+    if (!pesananList.length && halamanPesanan > 1) {
+        halamanPesanan -= 1;
+        return muatPesanan();
+    }
+
+    if (!pesananList.length) {
+        container.innerHTML = "<p>Belum ada pesanan masuk.</p>";
+        return;
+    }
+
+    let html = '<table class="keranjang-table"><tr><th>ID</th><th>Pembeli</th><th>Item</th><th>Pengiriman</th><th>Total</th><th>Status</th><th>Tanggal</th></tr>';
+    for (const o of pesananList) {
+        const opsiHtml = STATUS_OPSI.map(
+            (s) => `<option value="${s}" ${s === o.status ? "selected" : ""}>${s}</option>`
+        ).join("");
+
+        // Semua teks yang berasal dari input pembeli (nama, catatan, alamat) WAJIB di-escape
+        // sebelum masuk innerHTML — kalau nggak, pembeli iseng bisa nyuntik <script> yang jalan
+        // di browser admin (stored XSS) dan mencuri token admin dari localStorage.
+        const itemHtml = o.items.map((item) => {
+            const namaProduk = escapeHtml(item.produk ? item.produk.nama : "-");
+            const catatanHtml = item.catatan ? ` <span class="item-catatan">📝 ${escapeHtml(item.catatan)}</span>` : "";
+            return `${item.jumlah}x ${namaProduk}${catatanHtml}`;
+        }).join("<br>");
+
+        const labelPengiriman = escapeHtml(LABEL_PENGIRIMAN[o.metode_pengiriman] || o.metode_pengiriman);
+        const ongkirHtml = o.ongkir > 0 ? `<br><small class="mono">+Rp${o.ongkir.toLocaleString("id-ID")}</small>` : "";
+        const alamatHtml = (o.metode_pengiriman === "diantar" && o.alamat)
+            ? `<br><small>${escapeHtml([o.alamat.alamat_jalan, o.alamat.kelurahan, o.alamat.kecamatan, o.alamat.kota].filter(Boolean).join(", "))}</small>`
+            : "";
+
+        html += `<tr>
+            <td>#${o.id}</td>
+            <td>${escapeHtml(o.user ? o.user.nama : "-")}</td>
+            <td>${itemHtml}</td>
+            <td>${labelPengiriman}${ongkirHtml}${alamatHtml}</td>
+            <td>Rp${o.total_harga.toLocaleString("id-ID")}</td>
+            <td><select data-order-id="${o.id}" class="status-select">${opsiHtml}</select></td>
+            <td>${new Date(o.created_at).toLocaleString("id-ID")}</td>
+        </tr>`;
+    }
+    html += "</table>";
+
+    html += `
+    <div class="pagination">
+        <button type="button" onclick="gantiHalamanPesanan(-1)" ${halamanPesanan <= 1 ? "disabled" : ""}>◀ Sebelumnya</button>
+        <span class="pagination-info">Halaman ${halamanPesanan}</span>
+        <button type="button" onclick="gantiHalamanPesanan(1)" ${pesananList.length < PER_HALAMAN ? "disabled" : ""}>Berikutnya ▶</button>
+    </div>`;
+
+    container.innerHTML = html;
+
+    document.querySelectorAll(".status-select").forEach((sel) => {
+        sel.addEventListener("change", () => updateStatus(sel.dataset.orderId, sel.value));
+    });
+}
+
+function gantiHalamanPesanan(arah) {
+    halamanPesanan += arah;
+    if (halamanPesanan < 1) halamanPesanan = 1;
+    muatPesanan();
+}
+
+/* ---------- Ubah status pesanan ---------- */
+
+async function updateStatus(orderId, statusBaru) {
+    const res = await fetch(`/admin/pesanan/${orderId}/status`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status: statusBaru }),
+    });
+
+    if (res.ok) {
+        showToast("Status pesanan berhasil diubah!");
+    } else {
+        showToast("Gagal mengubah status pesanan", "error");
+    }
+    muatPesanan();
+}
+
+/* ---------- Init ---------- */
+
+(async () => {
+    if (await cekAdmin()) muatPesanan();
+})();
