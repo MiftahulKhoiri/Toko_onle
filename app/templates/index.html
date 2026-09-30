@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ nama_toko }} — Produk{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/css/index.css?v=1">
+{% endblock %}
+
 {% block content %}
 <h1>Menu {{ nama_toko }}</h1>
 
@@ -20,85 +24,9 @@
 >
 
 <div class="produk-grid" id="produk-grid"><p>Memuat menu...</p></div>
-<p id="cari-kosong" class="cari-kosong" style="display:none;">Produk yang kamu cari nggak ketemu, coba kata kunci lain.</p>
+<p id="cari-kosong" class="cari-kosong">Produk yang kamu cari nggak ketemu, coba kata kunci lain.</p>
 {% endblock %}
 
 {% block script %}
-<script>
-let urutanAktif = "semua";
-
-async function muatProdukList() {
-    const grid = document.getElementById("produk-grid");
-    grid.innerHTML = "<p>Memuat menu...</p>";
-
-    try {
-        const res = await fetch(`/produk/?urutan=${urutanAktif}&limit=200`);
-        const produkList = await res.json();
-        renderProdukGrid(produkList);
-    } catch (err) {
-        grid.innerHTML = "<p>Gagal memuat menu, coba refresh halaman.</p>";
-    }
-}
-
-function renderProdukGrid(produkList) {
-    const grid = document.getElementById("produk-grid");
-
-    if (!produkList.length) {
-        grid.innerHTML = "<p>Belum ada produk.</p>";
-        return;
-    }
-
-    grid.innerHTML = produkList.map((p) => {
-        const cariKey = escapeHtml(`${p.nama} ${p.deskripsi || ""} ${p.kategori || ""}`.toLowerCase());
-        const foto = p.gambar_url
-            ? `<img src="${escapeHtml(p.gambar_url)}" alt="${escapeHtml(p.nama)}">`
-            : `<div class="produk-placeholder">🥣</div>`;
-        return `
-        <div class="produk-card" data-cari="${cariKey}">
-            <a href="/menu/${p.id}" class="produk-link">
-                <div class="produk-media">
-                    ${foto}
-                    <span class="harga-stamp">Rp${p.harga.toLocaleString("id-ID")}</span>
-                </div>
-                <div class="produk-info">
-                    <h3>${escapeHtml(p.nama)}</h3>
-                    <p class="deskripsi">${escapeHtml(p.deskripsi || "")}</p>
-                    <p class="stok">Stok: ${p.stok}</p>
-                </div>
-            </a>
-            <div class="produk-aksi">
-                <button onclick="tambahKeKeranjang(${p.id})" ${p.stok === 0 ? "disabled" : ""}>
-                    ${p.stok === 0 ? "Habis" : "+ Keranjang"}
-                </button>
-            </div>
-        </div>`;
-    }).join("");
-
-    filterProduk();
-}
-
-function gantiUrutan(urutan) {
-    urutanAktif = urutan;
-    document.querySelectorAll("#tab-urutan button").forEach((btn) => {
-        btn.classList.toggle("tab-aktif", btn.dataset.urutan === urutan);
-    });
-    muatProdukList();
-}
-
-function filterProduk() {
-    const kataKunci = document.getElementById("cari-produk").value.trim().toLowerCase();
-    const kartuList = document.querySelectorAll("#produk-grid .produk-card");
-    let adaYangTampil = false;
-
-    kartuList.forEach((kartu) => {
-        const cocok = kartu.dataset.cari.includes(kataKunci);
-        kartu.style.display = cocok ? "" : "none";
-        if (cocok) adaYangTampil = true;
-    });
-
-    document.getElementById("cari-kosong").style.display = (adaYangTampil || kartuList.length === 0) ? "none" : "block";
-}
-
-muatProdukList();
-</script>
+<script src="/static/js/index.js?v=1"></script>
 {% endblock %}
