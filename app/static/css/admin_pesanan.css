@@ -1,0 +1,4 @@
+/* app/static/css/admin_pesanan.css — khusus halaman /panel-admin/pesanan */
+
+/* Daftar pesanan disembunyikan sampai cekAdmin() lolos (JS set display: block) */
+#pesanan-list { display: none; }
