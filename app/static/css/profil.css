@@ -1,0 +1,37 @@
+/* app/static/css/profil.css — khusus halaman /profil
+   (class profil-avatar, profil-info-*, dll masih ada di style.css) */
+
+/* Kotak utama */
+.form-box.profil-box { max-width: 600px; margin: 2rem auto; }
+
+/* Input file foto disembunyikan, dipicu lewat label avatar */
+#input-foto-profil { display: none; }
+
+/* Form edit disembunyikan sampai tombol Edit ditekan (JS set display: block / none) */
+#form-edit-profil { display: none; }
+
+/* Tombol di tampilan profil */
+.form-box button.btn-edit-profil { margin-top: 1.2rem; }
+
+.profil-divider { margin: 1.5rem 0; border: none; border-top: 1px solid #ddd; }
+
+.form-box button.btn-logout,
+.form-box button.btn-logout:hover { background-color: #dc3545; color: white; }
+
+/* Form edit */
+#edit-email { background-color: #eee; }
+#edit-kode-pos { max-width: 200px; }
+
+.form-box .form-section-title {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 0.3rem;
+}
+
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.form-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; }
+.form-actions button { flex: 1; }
+.form-box button.btn-batal,
+.form-box button.btn-batal:hover { background: #6c757d; }
