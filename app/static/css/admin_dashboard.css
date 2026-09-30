@@ -1,0 +1,53 @@
+/* app/static/css/admin_dashboard.css — khusus halaman /panel-admin */
+
+/* Konten admin disembunyikan sampai cekAdmin() lolos (JS set display: block) */
+#admin-content { display: none; }
+
+/* Form tambah produk */
+.form-box.admin-form-box { max-width: 600px; margin: 1rem 0; }
+
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+.form-checks { display: flex; gap: 1.5rem; margin: 1rem 0; }
+.check-label { cursor: pointer; }
+
+.form-box .hint-text { font-size: 0.8rem; color: #666; margin-top: 0.2rem; }
+
+.foto-preview { display: none; max-width: 120px; margin-top: 0.5rem; border-radius: 6px; }
+
+/* Modal edit produk (JS set display: flex / none) */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    justify-content: center;
+    align-items: center;
+}
+
+.form-box.modal-box {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+.modal-actions button { flex: 1; }
+.form-box button.btn-batal,
+.form-box button.btn-batal:hover { background: #6c757d; }
+
+/* Tabel daftar produk */
+.kolom-foto { text-align: center; }
+.produk-thumb { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; }
+.produk-kategori { color: #666; }
+
+.keranjang-table button.btn-hapus,
+.keranjang-table button.btn-hapus:hover { background: #dc3545; color: white; }
