@@ -5,7 +5,7 @@
 {% if produk %}
 <a href="/" class="kembali-link">← Kembali ke Menu</a>
 
-<div class="detail-produk">
+<div class="detail-produk" data-stok="{{ produk.stok }}">
     <div class="detail-media">
         {% if produk.gambar_url %}
         <img src="{{ produk.gambar_url }}" alt="{{ produk.nama }}">
@@ -48,38 +48,6 @@
 
 {% block script %}
 {% if produk %}
-<script>
-let jumlahDipilih = 1;
-const stokMaks = {{ produk.stok }};
-
-function ubahJumlahDetail(delta) {
-    const baru = jumlahDipilih + delta;
-    if (baru < 1 || baru > stokMaks) return;
-    jumlahDipilih = baru;
-    document.getElementById("detail-jumlah").textContent = jumlahDipilih;
-}
-
-async function tambahDetailKeKeranjang(produkId) {
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-        window.location.href = "/login";
-        return;
-    }
-
-    const res = await fetch("/keranjang/items", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ produk_id: produkId, jumlah: jumlahDipilih }),
-    });
-
-    if (!res.ok) {
-        const err = await res.json();
-        showToast(formatErrorDetail(err.detail) || "Gagal menambahkan ke keranjang", "error");
-        return;
-    }
-    updateCartBadge();
-    showToast("Ditambahkan ke keranjang!");
-}
-</script>
+<script src="/static/js/detail_produk.js?v=1"></script>
 {% endif %}
 {% endblock %}
